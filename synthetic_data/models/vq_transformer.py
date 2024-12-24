@@ -308,30 +308,55 @@ class RQBottleneckTransformer(nn.Module):
         )
         self.val_total += valid_toks.float().sum()
 
+    # @torch.no_grad()
+    # def quantize(self, audio):
+    #     print(self.rq.layers[0]._codebook.embed[0, self.vq_codes].shape)
+    #     if isinstance(audio, str):
+    #         x, sr = torchaudio.load(audio)
+    #         x = torchaudio.transforms.Resample(sr, 16000)(x)[0]
+    #         audio = x.unsqueeze(0)
+    #     mel_1 = self.log_mel_spectrogram(audio)
+    #     n = mel_1.shape[-1]
+    #     audio_max_length = 30 * 16000
+    #     if audio.shape[-1] > audio_max_length:
+    #         audio = audio[:audio_max_length]
+    #     else:
+    #         audio = F.pad(audio, (0, audio_max_length - audio.shape[-1]), value=0)
+
+    #     # Encode Mel
+    #     mel = self.log_mel_spectrogram(audio)
+    #     embs = self.whmodel[0].encoder(mel)
+
+    #     # Quantize
+    #     x = self.downsample_embeddings(embs)
+    #     x = x + self.mlp(self.mlp_ln(x))
+    #     _, stoks, _ = self.rq(x)  # quantizer.shape = (1, 750, 1024)
+    #     # stoks = stoks[:,:n//2//self.downsample]
+    #     stoks = stoks.squeeze(-1)
+    #     stoks = stoks[:,:n//2//self.downsample]
+
+    #     return stoks[0]
     @torch.no_grad()
     def quantize(self, audio):
         if isinstance(audio, str):
             x, sr = torchaudio.load(audio)
             x = torchaudio.transforms.Resample(sr, 16000)(x)[0]
             audio = x.unsqueeze(0)
-
-        audio_max_length = 30 * 16000
-        if audio.shape[-1] > audio_max_length:
-            audio = audio[:audio_max_length]
-        else:
-            audio = F.pad(audio, (0, audio_max_length - audio.shape[-1]), value=0)
-
-        # Encode Mel
         mel = self.log_mel_spectrogram(audio)
-        embs = self.whmodel[0].encoder(mel)
-
-        # Quantize
+        n = mel.shape[-1]
+        if n > whisper.audio.N_FRAMES:
+            padding = 0
+            padded = mel[:,:,:whisper.audio.N_FRAMES]
+        else:
+            padding = -n % whisper.audio.N_FRAMES
+            padded = F.pad(mel, (0, padding), value=-1.5)
+        embs = self.whmodel[0].encoder(padded)
         x = self.downsample_embeddings(embs)
         x = x + self.mlp(self.mlp_ln(x))
-        _, stoks, _ = self.rq(x)  # quantizer.shape = (1, 750, 1024)
-        stoks = stoks.squeeze()
-
-        return stoks
+        _, stoks, _ = self.rq(x)
+        stoks = stoks.squeeze(-1)
+        stoks = stoks[:,:n//2//self.downsample]
+        return stoks[0]
 
     def dequantize(self, stoks):
         # Dequantize
@@ -347,6 +372,7 @@ class RQBottleneckTransformer(nn.Module):
             (0, self.stoks_len - stoks.shape[-1]),
             value=self.vq_codes if self.config.mask_embs else 0,
         )  # 750
+        # print(stoks)
 
         x = self.rq.layers[0]._codebook.embed[
             0, stoks.to(torch.long).view(-1)
@@ -362,7 +388,7 @@ class RQBottleneckTransformer(nn.Module):
         x = x + self.positional_embedding(positions)
 
         return self.ln_post(self.out_blocks(x))
-
+    @torch.no_grad()
     def inference(self, samples):
         """Perform inference on input samples"""
 

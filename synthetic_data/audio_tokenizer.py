@@ -56,7 +56,7 @@ def load_model(
     ichigo_model.eval()
     return ichigo_model
 class IchigoQuantizer:
-    def __init__(self, model_name="jan-hq/ichigo-quantizer:epoch-epoch=8-step=26253-val_epoch_accuracy=0.95.ckpt",model_size="medium-vi-2d-2048c-dim64", device: str = "cuda"):
+    def __init__(self, model_name="jan-hq/ichigo-quantizer:epoch_accuracy=0.93105.ckpt",model_size="medium-vi-2d-2048c-dim64", device: str = "cuda"):
         """Initialize the Audio Tokenizer with a specified device."""
         self.device = device
         self.ichigo_model = load_model(ref=model_name, size=model_size)
@@ -120,16 +120,27 @@ class WhisperVQTokenizer:
 
 if __name__ == "__main__":
     # Load the audio tokenizer
-    ds = load_dataset("/home/jan/BachVD/ichigo/synthetic_data/locals/test", split="train")
+    ds = load_dataset("linhtran92/viet_bud500", split='test[:1000]')
     # print(len(ds))
-    stoks = ds[5]['tokens']
-    print(len(stoks))
-    print(ds[5]['text'])
-    # convert from list to torchtensor
-    stoks = torch.tensor(stoks)
-    # Load the audio tokenizer
+    # stoks = ds[5]['tokens']
     audio_tokenizer = IchigoQuantizer()
     ichigo_model = audio_tokenizer.ichigo_model
+    audio = ds[3]['audio']
+    text = ds[3]['transcription']
+    print(text)
+    array = audio["array"]
+    sampling_rate = audio["sampling_rate"]
+
+    tensor_audio = torch.from_numpy(array).float().unsqueeze(0)
+    stoks = audio_tokenizer.encode(
+        (tensor_audio, sampling_rate)
+    )
+    # print(stoks)
+    print(len(stoks))
+    # print(ds[5]['text'])
+    # # convert from list to torchtensor
+    stoks = torch.tensor(stoks)
+    # # Load the audio tokenizer
     dequantize_embed = ichigo_model.dequantize(stoks).to(ichigo_model.whmodel[0].device)
     text = ichigo_model.whmodel[0].decode(dequantize_embed, ichigo_model.decoding_options)
-    print(text)
+    print(text[0].text)

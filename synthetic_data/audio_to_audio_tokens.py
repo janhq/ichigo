@@ -54,14 +54,14 @@ def process_and_save_audio(
     """
     logger.debug("Process %s will process %s examples.", process_id, len(subset))
     batch_audio = subset["audio"]
-    batch_index = subset["index"]
+    batch_index = subset["text"]
 
     audio_tokenizer = tokenizer_cls(device=device)
 
     # Create a writer for this process
     schema = pa.schema(
         [
-            pa.field("index", pa.int64()),
+            pa.field("text", pa.string()),
             pa.field("tokens", pa.list_(pa.int64())),
         ]
     )
@@ -95,7 +95,7 @@ def process_and_save_audio(
 
                 batch.append(
                     {
-                        "index": index,
+                        "text": index,
                         "tokens": audio_tokens,
                     }
                 )
