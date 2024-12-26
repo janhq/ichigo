@@ -10,13 +10,13 @@ from services.tts.tts_model import TTSModel, ServeReferenceAudio
 from services.tts.tts_interface import TTSInterface
 from variables.fish_speech_variable import FishSpeechVariable
 from common.utility.convert_utility import ConvertUtility
-from tools.server.model_manager import ModelManager
+from fish_speech.tools.server.model_manager import ModelManager
 
-from tools.server.api_utils import (
+from fish_speech.tools.server.api_utils import (
     get_content_type,
     inference_async,
 )
-from tools.server.inference import inference_wrapper as inference
+from fish_speech.tools.server.inference import inference_wrapper as inference
 class TTSService(TTSInterface):
     _tts_service = None
 

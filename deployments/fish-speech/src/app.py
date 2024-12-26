@@ -1,8 +1,12 @@
 
 import argparse
-import os
-from contextlib import asynccontextmanager
+import os,sys
 from pathlib import Path
+## This part is a trick to bypass the import error when submodule fish-speech
+fish_speech_path = Path(os.path.dirname(os.path.realpath(__file__)))/"fish_speech"
+sys.path.append(str(fish_speech_path))
+from contextlib import asynccontextmanager
+
 from typing import AsyncGenerator, List
 
 import uvicorn
@@ -56,6 +60,7 @@ if __name__ == "__main__":
     LoggerUtility.init_logger(__name__, args.log_level, args.log_path)
 
     env_path = Path(os.path.dirname(os.path.realpath(__file__))) / "variables" / ".env"
+    
     load_dotenv(dotenv_path=env_path)
     app: FastAPI = create_app()
     print("Server is running at: 0.0.0.0:", args.port)

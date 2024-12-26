@@ -1,4 +1,4 @@
-from tools.schema import ServeTTSRequest, ServeReferenceAudio
+from fish_speech.tools.schema import ServeTTSRequest, ServeReferenceAudio
 from dataclasses import dataclass
 
 class TTSModel:
