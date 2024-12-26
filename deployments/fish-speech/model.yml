@@ -1,0 +1,18 @@
+id: fish-speech:fp16
+model: fish-speech:fp16
+name: fish-speech
+version: 1
+
+port: 22312
+script: src/app.py
+log_path: fish-speech.log
+log_level: INFO
+environment: ""
+command:
+  - python
+depends:
+  []
+engine: python-engine
+extra_params:
+  device_id: 0
+  package_dir: ""
