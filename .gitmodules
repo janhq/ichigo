@@ -1,3 +1,6 @@
 [submodule "torchtune"]
 	path = torchtune
 	url = https://github.com/janhq/torchtune.git
+[submodule "deployments/fish-speech/src/fish_speech"]
+	path = deployments/fish-speech/src/fish_speech
+	url = https://github.com/fishaudio/fish-speech.git

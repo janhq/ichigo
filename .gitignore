@@ -3,3 +3,6 @@ old_train.py
 __pycache__
 .ipynb_checkpoints
 outputs
+*.pt
+*.model
+downloads/
