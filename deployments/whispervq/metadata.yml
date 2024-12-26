@@ -1,0 +1,3 @@
+version: 1
+name: whispervq
+default: fp16
