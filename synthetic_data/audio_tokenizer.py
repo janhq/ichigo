@@ -1,6 +1,5 @@
 import os
 from typing import List, Tuple
-
 import torch
 import torchaudio
 from huggingface_hub import hf_hub_download
@@ -56,11 +55,11 @@ def load_model(
     ichigo_model.eval()
     return ichigo_model
 class IchigoQuantizer:
-    def __init__(self, model_name="jan-hq/ichigo-quantizer:epoch_accuracy=0.93105.ckpt",model_size="medium-vi-2d-2048c-dim64", device: str = "cuda"):
+    def __init__(self, model_name="homebrewltd/ichigo-whisper:merge-medium-vi-2d-2560c-dim64.pth",model_size="merge-medium-vi-2d-2560c-dim64", device: str = "cuda", language: str = "en"):
         """Initialize the Audio Tokenizer with a specified device."""
         self.device = device
         self.ichigo_model = load_model(ref=model_name, size=model_size)
-        self.ichigo_model.ensure_whisper(self.device, language='vi')
+        self.ichigo_model.ensure_whisper(self.device, language=language)
         self.ichigo_model.to(self.device)
     
     def encode(self, audio: Tuple[torch.Tensor, int]) -> List:
@@ -120,13 +119,13 @@ class WhisperVQTokenizer:
 
 if __name__ == "__main__":
     # Load the audio tokenizer
-    ds = load_dataset("linhtran92/viet_bud500", split='test[:1000]')
+    ds = load_dataset("jan-hq/ichigo_tokens_v2", "libris_r_filtered", split="train")
     # print(len(ds))
     # stoks = ds[5]['tokens']
     audio_tokenizer = IchigoQuantizer()
     ichigo_model = audio_tokenizer.ichigo_model
     audio = ds[3]['audio']
-    text = ds[3]['transcription']
+    text = ds[5]['transcript']
     print(text)
     array = audio["array"]
     sampling_rate = audio["sampling_rate"]
