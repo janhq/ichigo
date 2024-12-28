@@ -62,13 +62,12 @@ def decompress_sound_tokens(compressed_str: str) -> str:
     
     return '<' + '|><|'.join(decompressed_tokens) + '>'
 libspeech_test = load_dataset("linhtran92/viet_bud500", split='test[:1000]')
-# drop_column = ["file", "speaker_id", "id"]
-# libspeech_test = libspeech_test.remove_columns(drop_column)
-audio_tokenizer = IchigoQuantizer(language="vi")
+prompt = "You are a professional transcriber, fluent in understanding noisy audio recordings. You are tasked with transcribing a recording where the audio quality is very noisy and potentially monotonous. Despite the challenging input, your transcription should be as clear and accurate as possible."
+audio_tokenizer = IchigoQuantizer(language="vi", prompt=prompt)
 ichigo_model = audio_tokenizer.ichigo_model
 
-tok_t2s = AutoTokenizer.from_pretrained("jan-hq/Ichigo-llama3.2-base-1B-T2S-2560c-epoch-3")
-t2s = AutoModelForCausalLM.from_pretrained("jan-hq/Ichigo-llama3.2-base-1B-T2S-2560c-epoch-3").to("cuda")
+tok_t2s = AutoTokenizer.from_pretrained("jan-hq/Ichigo-llama3.2-base-1B-T2S-2560c-epoch-2")
+t2s = AutoModelForCausalLM.from_pretrained("jan-hq/Ichigo-llama3.2-base-1B-T2S-2560c-epoch-2").to("cuda")
 
 def whispervq_tokenizer(audio: tuple) -> list[int]:
     wav, sr = audio['array'], audio['sampling_rate']
@@ -127,11 +126,6 @@ def Text_to_Sementic_instruct(prompt: str):
     # convert to torch from list
     return torch.tensor(codes)
 stats_t2s = WERStats()
-# prompt = "You are a professional transcriber, fluent in understanding noisy audio recordings. You are tasked with transcribing a recording where the audio quality is very noisy and potentially monotonous. Despite the challenging input, your transcription should be as clear and accurate as possible."
-# decoding_options = whisper.DecodingOptions(
-#         language="en",
-#         prompt=prompt,
-#         )
 for audio, text in zip(libspeech_test['audio'], libspeech_test['transcription']):
     wav = torch.from_numpy(audio['array']).float()
     codes_t2s = Text_to_Sementic(f"{text}.".lower())
@@ -140,39 +134,16 @@ for audio, text in zip(libspeech_test['audio'], libspeech_test['transcription'])
     print(text)
     print(text_t2s)
     print("*"*20)
-    # stats_whispervq.push(hallucination = last_diff.type == 'insert' and last_diff.hyp_end_idx - last_diff.hyp_start_idx > 3)
     # text to sementic
     diff = stats_t2s.push_sample(wav, text, text_t2s)
     last_diff = diff.alignments[0][-1]
     # stats_whispervq.push(hallucination = last_diff.type == 'insert' and last_diff.hyp_end_idx - last_diff.hyp_start_idx > 3)
-# stats = stats.df().sort_values('wer')
-# save stats to csv
 stats_t2s = stats_t2s.df()
 # drop column mer, wil, wip
 stats_t2s = stats_t2s.drop(columns=['mer', 'wil', 'wip'])
-# rename the column text -> whispervq text
 stats_t2s = stats_t2s.rename(columns={'text': 'Ichigo T2S + Whisper decoder'})
 stats_t2s.to_csv("stats.csv")
-# print WER for each model
 t2s_wer = round(stats_t2s['wer'].mean() * 100 ,2)
-# plot bar chart
-print(f'Text to Sementic WER: {t2s_wer}%')
-
-plt.figure(figsize=(8, 6))
-bars = plt.bar(["Text2sementic_with_prompt"], [t2s_wer], color=['skyblue'])
-
-# Tùy chỉnh biểu đồ
-plt.ylabel('WER (%)')
-plt.title('Comparing WER between WhisperVQ and Text2Sementic')
-# Thêm giá trị số trên đầu mỗi cột
-for bar in bars:
-    height = bar.get_height()
-    plt.text(bar.get_x() + bar.get_width()/2., height,
-            f'{height:.2f}%',
-            ha='center', va='bottom')
-
-plt.tight_layout()
-plt.savefig("wer.png")
 
 
 

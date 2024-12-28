@@ -61,11 +61,12 @@ def decompress_sound_tokens(compressed_str: str) -> str:
 libspeech_test = load_dataset("/home/jan/server-state-temp/research_lab_new/BachVD/Audio_data/clean/test/", split='train[:1000]')
 drop_column = ["file", "speaker_id", "id"]
 libspeech_test = libspeech_test.remove_columns(drop_column)
-audio_tokenizer = IchigoQuantizer(language="en")
+prompt = "You are a professional transcriber, fluent in understanding noisy audio recordings. You are tasked with transcribing a recording where the audio quality is very noisy and potentially monotonous. Despite the challenging input, your transcription should be as clear and accurate as possible."
+audio_tokenizer = IchigoQuantizer(language="en", prompt=prompt)
 ichigo_model = audio_tokenizer.ichigo_model
 
-tok_t2s = AutoTokenizer.from_pretrained("jan-hq/Ichigo-llama3.2-base-1B-T2S-2560c-epoch-3")
-t2s = AutoModelForCausalLM.from_pretrained("jan-hq/Ichigo-llama3.2-base-1B-T2S-2560c-epoch-3").to("cuda")
+tok_t2s = AutoTokenizer.from_pretrained("jan-hq/Ichigo-llama3.2-base-1B-T2S-2560c-epoch-2")
+t2s = AutoModelForCausalLM.from_pretrained("jan-hq/Ichigo-llama3.2-base-1B-T2S-2560c-epoch-2").to("cuda")
 
 def whispervq_tokenizer(audio: tuple) -> list[int]:
     wav, sr = audio['array'], audio['sampling_rate']
@@ -125,11 +126,6 @@ def Text_to_Sementic_instruct(prompt: str):
     return torch.tensor(codes)
 stats_whispervq = WERStats()
 stats_t2s = WERStats()
-# prompt = "You are a professional transcriber, fluent in understanding noisy audio recordings. You are tasked with transcribing a recording where the audio quality is very noisy and potentially monotonous. Despite the challenging input, your transcription should be as clear and accurate as possible."
-# decoding_options = whisper.DecodingOptions(
-#         language="en",
-#         prompt=prompt,
-#         )
 for audio, text in zip(libspeech_test['audio'], libspeech_test['text']):
     wav = torch.from_numpy(audio['array']).float()
     codes_whispervq = whispervq_tokenizer(audio)

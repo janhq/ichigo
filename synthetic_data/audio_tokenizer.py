@@ -55,11 +55,11 @@ def load_model(
     ichigo_model.eval()
     return ichigo_model
 class IchigoQuantizer:
-    def __init__(self, model_name="homebrewltd/ichigo-whisper:merge-medium-vi-2d-2560c-dim64.pth",model_size="merge-medium-vi-2d-2560c-dim64", device: str = "cuda", language: str = "en"):
+    def __init__(self, model_name="homebrewltd/ichigo-whisper:merge-medium-vi-2d-2560c-dim64.pth",model_size="merge-medium-vi-2d-2560c-dim64", device: str = "cuda", language: str = "en", prompt: str = None):
         """Initialize the Audio Tokenizer with a specified device."""
         self.device = device
         self.ichigo_model = load_model(ref=model_name, size=model_size)
-        self.ichigo_model.ensure_whisper(self.device, language=language)
+        self.ichigo_model.ensure_whisper(self.device, language=language, prompt=prompt)
         self.ichigo_model.to(self.device)
     
     def encode(self, audio: Tuple[torch.Tensor, int]) -> List:
