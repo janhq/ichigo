@@ -460,11 +460,11 @@ class RQBottleneckTransformer(nn.Module):
         self.val_total[:] = 0
         return metrics
 
-    def setup(self, device, language=None, is_train=None):
+    def setup(self, device, language=None, prompt=None):
         """Setup the model on specified device"""
-        self.ensure_whisper(device=device, language=language, is_train=is_train)
+        self.ensure_whisper(device=device, language=language, prompt=prompt)
 
-    def ensure_whisper(self, device=None, language=None, is_train=None):
+    def ensure_whisper(self, device=None, language=None, prompt=None):
         """Ensure Whisper model is loaded"""
         if self.whmodel is not None:
             return
@@ -472,14 +472,18 @@ class RQBottleneckTransformer(nn.Module):
 
         if self.whmodel is None:
             self.whmodel = [whisper.load_model(self.whisper_model_name, device=device)]
-        if language == "demo" and not is_train:
+        params = {}
+        if language is not None:
+            params['language'] = language
+            if language in ['en', 'vi']:
+                print(f"🍓 Setting testing options for {language}")
+                
+        if prompt is not None:
             print("🚀 Setting decoding options for demo with custom prompt")
-            self.decoding_options = whisper.DecodingOptions(
-                prompt="You are a professional transcriber, fluent in Vietnamese and English. You are listening to a recording in which a person is potentially speaking both Vietnamese and English, and no other languages. They may be speaking only one of these languages. They may have a strong accent. You are to transcribe utterances of each language accordingly"
-            )
-        elif language in ["en", "vi"] and not is_train:
-            print(f"🍓 Setting testing options for {language}")
-            self.decoding_options = whisper.DecodingOptions(language=language)
+            params['prompt'] = prompt
+            
+        self.decoding_options = whisper.DecodingOptions(**params)
+        
         self.tokenizer = get_tokenizer(self.whisper_model_name, None)
 
     @property
