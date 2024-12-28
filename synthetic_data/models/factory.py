@@ -39,6 +39,13 @@ def make_vq_model(
             downsample=2,
             whisper_model_name="medium",
         ),
+        "merge-medium-vi-2d-2560c-dim64": dict(
+            codebook_dim=64,
+            vq_codes=2560,
+            n_head=16,
+            downsample=2,
+            whisper_model_name="medium",
+        ),
         "large-v3-vi-2d-512c-dim64": dict(
             codebook_dim=64,
             vq_codes=512,
