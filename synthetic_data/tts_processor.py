@@ -64,18 +64,3 @@ class TTSProcessor:
             output_path (str): The path to save the audio file.
         """
         self.pipe.generate_to_file(output_path, text, speaker=speaker)
-
-class TTSementicToken:
-    def __init__(self, device: str) -> None:
-        self.t2s_model = TSARTransformer.load_model("collabora/whisperspeech:t2s-v1.9-medium-7lang.model", device=device)
-        self.t2s_model.optimize(torch_compile=True)
-    def convert_text_to_tokens(self, text: str):
-        """Convert text to audio.
-
-        Args:
-            text (str): The text to convert to audio.
-
-        Returns:
-            torch.Tensor: The generated audio.
-        """
-        return self.t2s_model.generate(text, lang='en', cps=15, T=0.0 ,step=None)
