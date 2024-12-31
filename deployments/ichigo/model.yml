@@ -1,0 +1,27 @@
+id: ichigo-wrapper:fp16
+model: ichigo-wrapper:fp16
+name: Ichigo Wrapper
+version: 1
+
+files:
+  - /home/thuan/cortexcpp/models/cortex.so/ichigo-wrapper/fp16-linux-amd64/
+
+port: 22310
+script: app.py
+log_path: ichigo-wrapper.log
+log_level: INFO
+environment: ""
+command:
+  - python
+depends:
+  - ichigo:8b-gguf-q4-km
+  - whispervq:fp16-linux-amd64
+  - fish-speech:fp16-linux-amd64
+engine: python-engine
+extra_params:
+  device_id: 0
+  package_dir: ""
+  whisper_port: 3348
+  ichigo_port: 39281
+  fish_speech_port: 22312
+  ichigo_model: ichigo:8b-gguf-q4-km
