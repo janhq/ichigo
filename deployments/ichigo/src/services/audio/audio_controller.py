@@ -3,7 +3,7 @@ from common.constant.fastapi_constant import RestConstant
 from services.audio.audio_model import AudioModel
 from services.audio.implementation.audio_service import AudioService
 
-class TTSController(ControllerAbstract):
+class AudioController(ControllerAbstract):
     _prefix = "/inference"
 
     def __init__(self):

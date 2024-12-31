@@ -18,6 +18,10 @@ class AudioService(AudioInterface):
         if AudioService._audio_service is None:
             raise Exception("AudioService is not initialized")
         return AudioService._audio_service
+    
+    @staticmethod
+    def initialize(whisper_port, ichigo_port, fish_speech_port, ichigo_model):
+        AudioService._audio_service = AudioService(whisper_port, ichigo_port, fish_speech_port, ichigo_model)
 
     def __init__(self,  whisper_port, ichigo_port, fish_speech_port, ichigo_model):
         self.whisper_port = whisper_port
