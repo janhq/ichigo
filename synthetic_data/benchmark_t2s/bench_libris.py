@@ -84,7 +84,7 @@ def whispervq_tokenizer(audio: tuple) -> list[int]:
     return torch.tensor(codes)    
 
 def Text_to_Sementic(prompt: str) -> list[int]:
-    text = text = f"<|start_header_id|>user<|end_header_id|>\n\n<|reserved_special_token_69|>{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+    text = f"<|start_header_id|>user<|end_header_id|>\n\n<|reserved_special_token_69|>{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
     model_inputs = tok_t2s([text], return_tensors="pt").to("cuda")
     generated_ids = t2s.generate(
         **model_inputs,
@@ -106,7 +106,7 @@ def Text_to_Sementic(prompt: str) -> list[int]:
     # convert to torch from list
     return torch.tensor(codes)
 def Text_to_Sementic_instruct(prompt: str):
-    text = text = f"<|start_header_id|>user<|end_header_id|>\n\n<|reserved_special_token_69|>{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+    text = f"<|start_header_id|>user<|end_header_id|>\n\n<|reserved_special_token_69|>{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
     model_inputs = tok_t2s([text], return_tensors="pt").to("cuda")
     generated_ids = t2s.generate(
         **model_inputs,

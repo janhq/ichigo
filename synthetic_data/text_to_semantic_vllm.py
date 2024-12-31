@@ -1,11 +1,13 @@
-"""Orchestrates the pipeline to convert text to audio and generate with vllm."""
+"""Orchestrates the pipeline to generate text with vllm."""
 
 import os
-import importlib
 import json
 import warnings
 import time
-from multiprocessing import Process, Value, Manager
+import ray
+from ray.util.placement_group import placement_group
+from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
+from multiprocessing import Value, Manager
 
 import fire
 import torch
@@ -23,20 +25,37 @@ from utils import (
 from vllm import LLM, SamplingParams
 
 warnings.filterwarnings("ignore")
+@ray.remote(num_gpus=1, num_cpus=1)
+class T2SActor:
+    def __init__(self, model_path):
+        import os
+        import torch
 
-def initialize_vllm_model(
-    model_path: str,
-    gpu_utilization: float = 0.95,
-    max_model_len: int = 4096,
-) -> LLM:
-    """Initializes the vLLM model with optimized parameters."""
-    return LLM(
-        model=model_path,
-        gpu_memory_utilization=gpu_utilization,
-        max_model_len=max_model_len,
-    )
+        # Get the GPU IDs assigned to this actor by Ray
+        gpu_ids = ray.get_gpu_ids()
+        # Set CUDA_VISIBLE_DEVICES to limit the GPUs visible to this process
+        os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, gpu_ids))
+        # Set the default CUDA device
+        torch.cuda.set_device(0)  # Since only one GPU is visible, it's cuda:0
+        # Initialize the LLM model
+        self.llm = LLM(model=model_path, device="cuda:0")
 
-def process_and_save_audio_vllm(
+        self.sampling_params = SamplingParams(
+            max_tokens=1024,
+            temperature=0.0,
+            stop=["<|sound_end|>"],  
+            include_stop_str_in_output=True,
+            skip_special_tokens=False,
+            
+        )
+
+    def generate(self, prompts, indices):
+        # Generate text using the LLM instance
+        prompts = [f"<|start_header_id|>user<|end_header_id|>\n\n<|reserved_special_token_69|>{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n" for prompt in prompts]
+        outputs = self.llm.generate(prompts, self.sampling_params)
+        return [(index, output.outputs[0].text) for index, output in zip(indices, outputs)]
+
+def process_and_save_text_vllm(
     subset: Dataset,
     process_id: int,
     processed_count: Value,
@@ -45,10 +64,9 @@ def process_and_save_audio_vllm(
     save_batch_size: int,
     max_retries: int,
     format,
-    model_path: str,
-    sampling_params_dict: dict,
+    actor: T2SActor
 ):
-    """Process the text and generate with vllm and save the audio tokens to a file.
+    """Process the text using vllm and save the generated text to a file.
 
     Args:
         subset (Dataset): The subset of the dataset to process.
@@ -57,31 +75,22 @@ def process_and_save_audio_vllm(
         save_dir (str): The directory to save the file.
         save_batch_size (int): The batch size to save to the file.
         max_retries (int): The maximum number of retries for processing an item.
-        format (str): The format of the audio file.
-        llm_model (LLM): The vLLM model for generation.
-        sampling_params (SamplingParams): The sampling parameters for generation.
+        format (str): The format of the output file.
+        actor (T2SActor): The Ray actor for vLLM generation.
     """
-    # Assuming each process will handle a single GPU
-    device_id = process_id % torch.cuda.device_count()
-    torch.cuda.set_device(device_id)
-
-    # Initialize vLLM model on the specific GPU
-    llm_model = initialize_vllm_model(model_path)
-    sampling_params = SamplingParams(**sampling_params_dict)
-
-    logger.debug("Process %s will process %s examples on GPU %d.", process_id, len(subset), device_id)
-    batch_audio = subset["audio"]
-    batch_index = subset["transcript"]
+    logger.debug("Process %s will process %s examples.", process_id, len(subset))
+    batch_text = subset["input"]
+    batch_index = subset["output"]  # Assuming you have an 'index' column
 
     # Create a writer for this process
     schema = pa.schema(
         [
-            pa.field("text", pa.string()),
-            pa.field("tokens", pa.list_(pa.int64())),
+            pa.field("answer", pa.string()),  # Assuming index is an integer
+            pa.field("generated_text", pa.string()),
         ]
     )
 
-    file_path = os.path.join(save_dir, f"audio_tokens_{process_id}")
+    file_path = os.path.join(save_dir, f"generated_text_{process_id}")
     writer = Writer(file_path, schema, format)
     logger.debug("Process %s will save to %s.", process_id, file_path)
 
@@ -95,36 +104,28 @@ def process_and_save_audio_vllm(
     )
 
     batch = []
-    prompts = []
-    for audio, index in zip(batch_audio, batch_index):
-        logger.debug("Process %s processing item sample %s on GPU %d.", process_id, index, device_id)
+    prompts_with_indices = []
+    for text, index in zip(batch_text, batch_index):
+        logger.debug("Process %s processing item with index %s.", process_id, index)
         for attempt in range(max_retries):
             try:
-                array = audio["array"]
-                sampling_rate = audio["sampling_rate"]
+                # No audio tokenizer needed, 'text' should be your prompt
+                prompts_with_indices.append((index, text))
 
-                tensor_audio = torch.from_numpy(array).float().unsqueeze(0)
-
-                # Assuming audio_tokenizer.prepare_prompts is a method to prepare prompts for vLLM
-                prepared_prompt = audio_tokenizer.prepare_prompts(tensor_audio, sampling_rate)
-
-                prompts.append(prepared_prompt)
-
-                if len(prompts) >= save_batch_size:
-                    # Use vLLM for batch generation
-                    outputs = llm_model.generate(prompts, sampling_params)
-                    for output in outputs:
-                        # Assuming audio_tokenizer.postprocess_token is a method to postprocess vLLM output
-                        audio_tokens = audio_tokenizer.postprocess_token(output.outputs[0].token_ids)
+                if len(prompts_with_indices) >= save_batch_size:
+                    indices, prompts = zip(*prompts_with_indices)
+                    results = ray.get(actor.generate.remote(list(prompts), list(indices)))
+                    for index, generated_text in results:
                         batch.append(
                             {
-                                "text": index,
-                                "tokens": audio_tokens,
+                                "answer": index,
+                                "generated_text": generated_text,
                             }
                         )
+
                     save_batch(batch, writer)
                     batch = []
-                    prompts = []
+                    prompts_with_indices = []
                     save_failed_indices(failed_indices, saved_failed_indice_path)
 
                 with processed_count.get_lock():
@@ -132,21 +133,21 @@ def process_and_save_audio_vllm(
                 break
             except Exception as e:
                 logger.warning(
-                    "Attempt %s failed for index %s on GPU %d: %s", attempt + 1, index, device_id, str(e)
+                    "Attempt %s failed for index %s: %s", attempt + 1, index, str(e)
                 )
                 if attempt == max_retries - 1:
-                    logger.error("All attempts failed for index %s on GPU %d", index, device_id)
+                    logger.error("All attempts failed for index %s", index)
                     failed_indices.append(index)
 
-    # Save any remaining items in the batch
-    if prompts:
-        outputs = llm_model.generate(prompts, sampling_params)
-        for output in outputs:
-            audio_tokens = audio_tokenizer.postprocess_token(output.outputs[0].token_ids)
+    # Save any remaining items
+    if prompts_with_indices:
+        indices, prompts = zip(*prompts_with_indices)
+        results = ray.get(actor.generate.remote(list(prompts), list(indices)))
+        for index, generated_text in results:
             batch.append(
                 {
-                    "text": index,
-                    "tokens": audio_tokens,
+                    "answer": index,
+                    "generated_text": generated_text,
                 }
             )
         if batch:
@@ -162,90 +163,126 @@ def run_pipeline(
     dataset: Dataset,
     config: dict,
 ):
-    """Run the pipeline to convert text to audio and tokenize the audio.
+    """Run the pipeline to generate text using vLLM.
 
     Args:
         dataset (Dataset): The dataset to process.
-        devices (List): The list of devices to use for processing.
-        num_procs_per_device (int): The number of processes to run on each device.
-        save_dir (str): The directory to save the files.
-        save_batch_size (int): The batch size to save to the files.
-        sample_rate (int): The sample rate for the audio.
-        max_retries (int): The maximum number of retries for processing an item."""
+        config (dict): Configuration dictionary.
+    """
+    num_cpus = int(config["num_cpus"])
+    num_gpus = int(config["num_gpus"])
+
+    # Initialize Ray
+    ray.init(num_cpus=num_cpus, num_gpus=num_gpus)
+
     print(config)
     # Unpack the configuration
     (
         model_path,
-        num_procs_per_device,
         save_dir,
         save_batch_size,
         max_retries,
         format,
-        tokenizer_cls,
-        sampling_params_dict,
     ) = (
         config[key]
         for key in [
             "model_path",
-            "num_procs_per_device",
             "save_dir",
             "save_batch_size",
             "max_retries",
             "format",
-            "tokenizer",
-            "sampling_params",
         ]
     )
 
-    tokenizer_cls = getattr(importlib.import_module("audio_tokenizer"), tokenizer_cls)
-    logger.info("Using tokenizer: %s", tokenizer_cls)
-
     # Create the save directory if it does not exist
     os.makedirs(save_dir, exist_ok=True)
-    num_workers = 8 * num_procs_per_device  # Assuming 8 GPUs
     logger.info("Dataset size: %s", len(dataset))
 
-    # Split the dataset into non-overlapping chunks
-    chunks = create_non_overlapping_chunks(dataset, num_workers)
+    # Create a placement group with bundles for T2SActor and data processing
+    bundles = [{"GPU": 1, "CPU": 1} for _ in range(num_gpus)] + [{"CPU": 1} for _ in range(num_cpus)]
+    pg = placement_group(
+        name="llm_pg",
+        bundles=bundles,
+        strategy="SPREAD"  # Spread tasks across the cluster
+    )
+    ray.get(pg.ready())
 
-    processed_count = Value("i", 0)  # Value to store the number of items processed
-    with Manager() as manager:
-        failed_indices = manager.list()  # Shared list to store failed indices
-
-        # Start the worker processes
-        worker_processes = []
-        for i, chunk in enumerate(chunks):
-            p = Process(
-                target=process_and_save_audio_vllm,
-                args=(
-                    chunk,
-                    i,
-                    processed_count,
-                    failed_indices,
-                    save_dir,
-                    save_batch_size,
-                    max_retries,
-                    format,
-                    model_path,
-                    sampling_params_dict,
-                ),
+    # Create T2SActor instances
+    actors = []
+    for _ in range(num_gpus):
+        actor = T2SActor.options(
+            scheduling_strategy=PlacementGroupSchedulingStrategy(
+                placement_group=pg,
+                placement_group_bundle_index=_
             )
-            p.start()
-            worker_processes.append(p)
+        ).remote(model_path)
+        actors.append(actor)
 
-        while any(p.is_alive() for p in worker_processes):
-            # Log the progress every minute
-            logger.info("Processed: %s", processed_count.value)
-            time.sleep(60)
+    # Use Ray's remote functions to process chunks in parallel
+    futures = []
+    chunk_size = len(dataset) // num_cpus
+    for i in range(num_cpus):
+        start = i * chunk_size
+        end = (i + 1) * chunk_size if i < num_cpus - 1 else len(dataset)
+        chunk = dataset.select(range(start, end))
 
-        # Wait for the worker processes to finish
-        for p in worker_processes:
-            p.join()
+        # Use a remote function to process each chunk, using CPU resources
+        future = process_chunk_with_actor.options(
+            scheduling_strategy=PlacementGroupSchedulingStrategy(
+                placement_group=pg,
+                placement_group_bundle_index=num_gpus + i
+            )
+        ).remote(
+            chunk,
+            i,
+            save_dir,
+            save_batch_size,
+            max_retries,
+            format,
+            actors[i % num_gpus],  # Distribute chunks among actors
+        )
+        futures.append(future)
 
-        logger.info("All worker processes have finished.")
+    # Monitor progress (optional)
+    while futures:
+        done, futures = ray.wait(futures, timeout=60)
+        logger.info("Processed: %s", sum(ray.get(done)))
 
-        # Log the final counts
-        logger.info("Final processed count: %s", processed_count.value)
+    # Wait for all tasks to complete
+    processed_counts = ray.get(futures)
+    total_processed = sum(processed_counts)
+
+    logger.info("All worker processes have finished.")
+    logger.info("Final processed count: %s", total_processed)
+
+@ray.remote(num_cpus=1) # Allocate 1 CPU core
+def process_chunk_with_actor(
+    chunk: Dataset,
+    process_id: int,
+    save_dir: str,
+    save_batch_size: int,
+    max_retries: int,
+    format: str,
+    actor: T2SActor,
+) -> int:
+    """Process a chunk of the dataset with a given actor."""
+    processed_count = 0
+    failed_indices = []
+
+    # Call the existing function to process and save data
+    process_and_save_text_vllm(
+        chunk,
+        process_id,
+        processed_count,  # Pass as a regular variable
+        failed_indices,
+        save_dir,
+        save_batch_size,
+        max_retries,
+        format,
+        actor,
+    )
+    
+    return processed_count
 
 def main(
     config_path: str = "./configs/synthetic_generation_cfg.yaml",
@@ -254,11 +291,17 @@ def main(
     remaining_indices_file: str = None,
     save_dir: str = None,
 ):
-    """Run the pipeline to convert text to audio and tokenize the audio.
+    """Run the pipeline to generate text using vLLM.
 
     Args:
-        config_path (str): The path to the configuration file."""
-    test_mode = False
+        config_path (str): The path to the configuration file.
+        test_mode (bool): Whether to run in test mode.
+        name (str): The name of the dataset.
+        remaining_indices_file (str): Path to a file containing remaining indices to process.
+        save_dir (str): The directory to save output files.
+    """
+    test_mode = True
+    # Load the configuration file
     config = load_config(config_path)
 
     # Override config values if provided
@@ -277,6 +320,10 @@ def main(
         split=config["dataset"]["split"],
         num_proc=config["dataset"]["num_proc"],
     )
+
+    # Ensure the dataset has the necessary columns
+    # if not all(col in dataset.column_names for col in ["text", "index"]):
+    #     raise ValueError("Dataset must contain 'text' and 'index' columns.")
 
     # Check test mode
     if test_mode:
@@ -297,6 +344,10 @@ def main(
             )
         else:
             logger.info("Process FULL samples from %s", config["dataset"]["name"])
+
+    # Add num_cpus and num_gpus to the pipeline configuration
+    pipeline_config["num_cpus"] = config["num_cpus"]
+    pipeline_config["num_gpus"] = config["num_gpus"]
 
     run_pipeline(dataset, pipeline_config)
 

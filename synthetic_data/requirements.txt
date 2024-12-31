@@ -1,4 +1,6 @@
 openai-whisper==20231117
+torch==2.5.1
+torchaudio==2.5.1
 huggingface_hub
 IPython
 pyarrow
@@ -12,6 +14,6 @@ fire
 vector_quantize_pytorch==1.6.22
 webdataset==0.2.85
 whisperspeech
-torch==2.2.0
-torchaudio==2.2.0
 numpy==1.26.4
+ray
+vllm
