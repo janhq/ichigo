@@ -15,7 +15,7 @@ class WhisperRequest(BaseModel):
     format: AudioFormat = "wav"
     
 
-class FishSpeechRequest:
+class FishSpeechRequest(BaseModel):
     text: str
     normalize: bool = True
     format: str = "wav"

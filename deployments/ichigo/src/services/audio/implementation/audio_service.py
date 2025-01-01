@@ -82,7 +82,7 @@ class AudioService(AudioInterface):
             async for line in self.streamchatcompletion(session, request):
                 yield line
 
-    async def inference_stream_audio(self, session: aiohttp.ClientSession, request: AudioModel.AudioCompletionRequest):
+    async def inference_stream_audio(self, request: AudioModel.AudioCompletionRequest):
         async with aiohttp.ClientSession() as session:
             tokens = await self.tokenize_audio(session, request)
             request.messages = request.messages + \
