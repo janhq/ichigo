@@ -8,7 +8,7 @@ from vllm import LLM, SamplingParams
 from datasets import load_dataset
 import pandas as pd
 
-def main2():
+def main():
     print(sys.executable)
 
     # Initialize Ray
@@ -20,13 +20,13 @@ def main2():
     # Create a placement group with one GPU and one CPU per bundle
     pg = placement_group(
         name="llm_pg",
-        bundles=[{"GPU": 1, "CPU": 1} for _ in range(num_models)],
+        bundles=[{"GPU": 1, "CPU": 3} for _ in range(num_models)],
         strategy="STRICT_PACK"
     )
     ray.get(pg.ready())
 
     # Define the LLMActor class
-    @ray.remote(num_gpus=1, num_cpus=1)
+    @ray.remote(num_gpus=1, num_cpus=3)
     class LLMActor:
         def __init__(self, model_name):
             import os
@@ -35,7 +35,7 @@ def main2():
             gpu_ids = ray.get_gpu_ids()
             os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(int(gpu_id)) for gpu_id in gpu_ids)
             torch.cuda.set_device(0)
-            self.llm = LLM(model=model_name, device="cuda:0")
+            self.llm = LLM(model=model_name, device="cuda:0", gpu_memory_utilization=0.95, max_num_seqs=480)
             self.sampling_params = SamplingParams(
                 max_tokens=1024,
                 temperature=0.0,
@@ -47,12 +47,15 @@ def main2():
         def generate(self, prompts):
             # Generate text for a batch of prompts
             outputs = self.llm.generate(prompts, self.sampling_params)
-            return [output.outputs[0].text for output in outputs]
+            return [output.outputs[0].text.replace("<|eot_id|>", "") for output in outputs]
 
     # Load dataset from Hugging Face
-    dataset_name = "jan-hq/VTSNLP-instruct-filtered" # Replace with your dataset name
+    dataset_name = "homebrewltd/instruction-speech-whispervq-v3-subset-2" 
+    drop_column = ["tokens", "prompt", "conversations"]
     dataset = load_dataset(dataset_name, split="train")
-    text_column_name = "input"  # Replace with your text column name
+    # Drop unnecessary columns
+    dataset = dataset.remove_columns(drop_column)
+    text_column_name = "text_prompt"  
 
     # Divide the dataset equally among the actors
     dataset_size = len(dataset)
@@ -91,7 +94,7 @@ def main2():
             for text in dataset[text_column_name][start_indices[i]:end_indices[i]]
         ]
         # Divide prompts into smaller batches for each actor
-        batch_size = 256 # You can adjust this based on your memory constraints
+        batch_size = 480 # You can adjust this based on your memory constraints
         for j in range(0, len(prompts), batch_size):
             futures.append(actor.generate.remote(prompts[j:j+batch_size]))
 
@@ -102,12 +105,12 @@ def main2():
         generated_texts.extend(result_batch)
 
     # Add generated text to the dataset
-    dataset = dataset.add_column("generated_text", generated_texts)
+    dataset = dataset.add_column("compressed_prompt", generated_texts)
     
     # Save the updated dataset (optional, you can choose a different format or location)
-    dataset.save_to_disk("updated_dataset") # You can also save to Huggingface hub by using push_to_hub() method
-
+    dataset.save_to_disk("./instruction-speech-v2-ichigo-tokens/") # You can also save to Huggingface hub by using push_to_hub() method
+    # dataset.push_to_hub("jan-hq/ichigo-instruction-dataset")
     print("Dataset updated and saved successfully!")
 
 if __name__ == "__main__":
-    main2()
+    main()
