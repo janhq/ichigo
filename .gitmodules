@@ -2,7 +2,6 @@
 path = torchtune
 url = https://github.com/janhq/torchtune.git
 [submodule "ichigo-whisper"]
-path = ichigo-whisper
-url = https://github.com/janhq/WhisperSpeech.git
-branch = main
-sparse-checkout = true
+	path = ichigo-whisper
+	url = https://github.com/janhq/WhisperSpeech.git
+	branch = main
