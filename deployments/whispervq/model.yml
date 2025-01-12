@@ -1,0 +1,17 @@
+id: whispervq:fp16
+model: whispervq:fp16
+name: Ichigo WhisperVQ
+version: 1
+
+engine: python-engine
+
+extra_params:
+  device_id: 0
+  package_dir: ""
+  
+port: 3348
+script: src/app.py
+log_path: whisper.log
+log_level: INFO
+command:
+  - python
