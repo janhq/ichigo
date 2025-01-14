@@ -1,13 +1,9 @@
-from datasets import load_dataset, load_from_disk
 import torch
 import torchaudio
-from huggingface_hub import hf_hub_download
-from fastprogress import progress_bar
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, pipeline
 import pandas as pd
 import whisper
 import re
-import matplotlib.pyplot as plt
 from audio_tokenizer import IchigoQuantizer
 
 def extract_sound_codes(text):
