@@ -66,8 +66,8 @@ prompt=None
 audio_tokenizer = IchigoQuantizer(language="en", prompt=prompt)
 ichigo_model = audio_tokenizer.ichigo_model
 
-tok_t2s = AutoTokenizer.from_pretrained("jan-hq/Ichigo-llama3.2-base-1B-T2S-2560c-epoch-2")
-t2s = AutoModelForCausalLM.from_pretrained("jan-hq/Ichigo-llama3.2-base-1B-T2S-2560c-epoch-2").to("cuda")
+tok_t2s = AutoTokenizer.from_pretrained("homebrewltd/Speechless-llama3.2-v0.1")
+t2s = AutoModelForCausalLM.from_pretrained("homebrewltd/Speechless-llama3.2-v0.1").to("cuda")
 
 def whispervq_tokenizer(audio: tuple) -> list[int]:
     wav, sr = audio['array'], audio['sampling_rate']
