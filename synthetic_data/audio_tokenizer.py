@@ -3,11 +3,10 @@ from typing import List, Tuple
 import torch
 import torchaudio
 from huggingface_hub import hf_hub_download
-from encodec import EncodecModel
 from encodec.utils import convert_audio
 from whisperspeech.vq_stoks import RQBottleneckTransformer
-from vq_config import VQConfig
-from models.factory import make_vq_model
+from ichigo_whisper.config.vq_config import VQConfig
+from ichigo_whisper.models.factory import make_vq_model
 import os
 from datasets import load_dataset
 

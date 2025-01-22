@@ -1,7 +1,8 @@
-openai-whisper==20231117
+openai_whisper==20240930
 torch==2.5.1
 torchaudio==2.5.1
 huggingface_hub
+ichigo-whisper==2.3.0
 IPython
 pyarrow
 matplotlib
@@ -11,7 +12,6 @@ datasets
 encodec
 boto3
 fire
-vector_quantize_pytorch==1.6.22
 webdataset==0.2.85
 whisperspeech
 numpy==1.26.4

@@ -3,7 +3,7 @@ import torch
 import torchaudio
 from huggingface_hub import hf_hub_download
 from fastprogress import progress_bar
-from ichigo.synthetic_data.benchmark_t2s.wer_metrics import *
+from wer_metrics import *
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, pipeline
 import pandas as pd
 import whisper
