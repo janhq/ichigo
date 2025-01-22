@@ -146,7 +146,7 @@ The `TTSProcessor` class uses WhisperSpeech to convert text prompts into audio w
 
 ### 8.2 Audio Tokenizer
 
-The `AudioTokenizer` class uses EncodecModel to process audio waveforms into tokenized representations. It can also decode audio tokens back into waveforms if needed.
+The `AudioTokenizer` class uses WhisperSpeech and Ichigo Tokenizer to process audio waveforms into tokenized representations. It can also decode audio tokens back into waveforms if needed.
 
 ## 9. Data Flow
 
