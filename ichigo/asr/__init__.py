@@ -6,7 +6,6 @@ from ichigo.asr.transcriber import IchigoASR
 
 _default_model = None
 
-
 def get_model(**kwargs) -> IchigoASR:
     """Get or create default ASR model instance"""
     global _default_model
