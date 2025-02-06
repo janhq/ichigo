@@ -1,0 +1,37 @@
+# Hub
+model_name: "merge-medium-vi-2d-2560c-dim64"
+model_hub: "homebrewltd/ichigo-whisper"
+whisper_name: "medium"
+
+s2r:
+
+quantizer:
+  # Model Architecture
+  n_head: 16
+  head_width: 64
+  ffn_mult: 4
+  depth: 1
+  q_depth: 1
+  downsample: 2
+
+  # Vector Quantization
+  vq_codes: 2560
+  num_quantizers: 1
+  codebook_dim: 64
+  codebook_decay: 0.99
+  commitment_weight: 1.0
+  threshold_ema_dead_code: 0
+  query_mult: 2
+  use_cosine_sim: True
+  no_quantize: False
+
+  # Utils
+  rope: True
+  mask_embs: True
+  downsample_conv: False
+  downsample_mean: True
+
+r2t:
+  decoding_options:
+    task: "transcribe"
+    prompt: "You are a professional transcriptionist fluent in both Vietnamese and English. You are tasked with transcribing an audio recording in which the speaker may switch between Vietnamese and English or speak entirely in one of these two languages. No other languages are present in the recording. The speaker may have a regional accent in either language. Your goal is to provide an accurate transcription of all spoken content in the appropriate language. If a translated section appears nonsensical or inaccurate, feel free to revise it to ensure clarity and correctness."

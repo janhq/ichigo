@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ichigo"
+version = "0.0.1"
+authors = [
+    { name = "Charles", email = "charles@jan.ai" },
+]
+description = "Ichigo is an open, ongoing research experiment to extend a text-based LLM to have native listening ability. Think of it as an open data, open weight, on device Siri."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+keywords = ["asr", "llm", "tts", "ichigo"]
+dependencies = [
+    "huggingface_hub==0.26.2",
+    "openai_whisper==20240930",
+    "torch==2.5.1",
+    "torchaudio==2.5.1",
+    "vector_quantize_pytorch==1.6.22",
+    "transformers",
+    "build",
+    "twine",
+    "fastapi",
+    "whisperspeech",
+    "accelerate>=0.26.0"
+]
+
+[tool.setuptools]
+package-dir = { "ichigo"="ichigo" }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ichigo*"]
+namespaces = true 
