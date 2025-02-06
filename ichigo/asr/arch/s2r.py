@@ -10,6 +10,7 @@ class Speech2Rep(nn.Module):
         self.config = config["s2r"]
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = whisper.load_model(config["whisper_name"], device=device)
+        del self.model.decoder
 
     def forward(self, wav):
         mel = whisper.log_mel_spectrogram(wav)

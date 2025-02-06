@@ -13,6 +13,7 @@ class Rep2Text(nn.Module):
         )
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = whisper.load_model(self.whisper_name, device=device)
+        del self.model.encoder
 
     def forward(self, dequantize_embed):
         return self.model.decode(dequantize_embed, self.decoding_options)
