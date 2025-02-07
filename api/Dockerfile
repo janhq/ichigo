@@ -6,5 +6,5 @@ RUN apt update && \
     apt clean
 
 COPY . /code
-RUN pip install -e .
+RUN pip install ichigo
 RUN pip install --no-cache-dir "fastapi[standard]==0.115.*"
