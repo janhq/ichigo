@@ -80,6 +80,7 @@ docker compose up -d
 ```
 
 2. curl
+```bash
 # S2T
 curl "http://localhost:8000/v1/audio/transcriptions" \
   -H "accept: application/json" \
