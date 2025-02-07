@@ -49,7 +49,7 @@ class IchigoASR:
         with open(config_path) as f:
             self.config = yaml.safe_load(f)
 
-        model_path = f"{self.config['model_hub']}:{self.config['model_name']}.pth"
+        model_path = f"{self.config['model_hub']}:{self.config['model_name']}"
 
         self.s2r = Speech2Rep(self.config)
         self.quantizer = load_quantizer(ref=model_path, config=self.config)

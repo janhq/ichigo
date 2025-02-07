@@ -23,6 +23,7 @@ class Quantizer(nn.Module):
 
         # Vector Quantization
         self.vq_codes = qconfig["vq_codes"]
+        self.mask_code = qconfig["mask_code"]
         self.num_quantizers = qconfig["num_quantizers"]
         self.codebook_dim = qconfig["codebook_dim"]
         self.threshold_ema_dead_code = qconfig["threshold_ema_dead_code"]
@@ -133,7 +134,7 @@ class Quantizer(nn.Module):
         stoks = F.pad(
             stoks,
             (0, self.stoks_len - stoks.shape[-1]),
-            value=2048 if self.mask_embs else 0,  # TODO: DONT HARDCODE
+            value=self.mask_code if self.mask_embs else 0,
         )
 
         x = self.rq.layers[0]._codebook.embed[0, stoks.to(torch.long).view(-1)]

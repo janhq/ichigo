@@ -1,5 +1,5 @@
 # Hub
-model_name: "merge-medium-vi-2d-2560c-dim64"
+model_name: "merge-medium-vi-2d-2560c-dim64.pth"
 model_hub: "homebrewltd/ichigo-whisper"
 whisper_name: "medium"
 
@@ -16,6 +16,7 @@ quantizer:
 
   # Vector Quantization
   vq_codes: 2560
+  mask_code: 2048
   num_quantizers: 1
   codebook_dim: 64
   codebook_decay: 0.99

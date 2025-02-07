@@ -1,0 +1,37 @@
+# Hub
+model_name: "whisper-vq-stoks-v3-7lang.model"
+model_hub: "WhisperSpeech/WhisperSpeech"
+whisper_name: "medium"
+
+s2r:
+
+quantizer:
+  # Model Architecture
+  n_head: 16
+  head_width: 64
+  ffn_mult: 4
+  depth: 1
+  q_depth: 1
+  downsample: 2
+
+  # Vector Quantization
+  vq_codes: 512
+  mask_code: 512
+  num_quantizers: 1
+  codebook_dim: 64
+  codebook_decay: 0.99
+  commitment_weight: 1.0
+  threshold_ema_dead_code: 0
+  query_mult: 2
+  use_cosine_sim: True
+  no_quantize: False
+
+  # Utils
+  rope: True
+  mask_embs: True
+  downsample_conv: False
+  downsample_mean: True
+
+r2t:
+  decoding_options:
+    task: "transcribe"
