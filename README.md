@@ -69,13 +69,17 @@ stoks = model.get_stoks("path/to/file")
 
 ### API
 
+1. Start the server
+
 ```bash
-# Start the API server
+# Uvicorn
 cd api && uvicorn asr:app --host 0.0.0.0 --port 8000
 
-# alternatively, with Docker
-# docker compose -f 'docker-compose.yml' up -d --build 'asr'
+# or Docker 
+docker compose up -d
+```
 
+2. curl
 # S2T
 curl "http://localhost:8000/v1/audio/transcriptions" \
   -H "accept: application/json" \
