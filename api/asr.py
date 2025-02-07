@@ -16,7 +16,6 @@ MODEL_LOCK = threading.Lock()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # load model to GPU at startup
     get_model()
     yield
 

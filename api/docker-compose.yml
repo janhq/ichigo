@@ -6,7 +6,7 @@ services:
     # network_mode: host
     ports:
       - "8000:8000"
-    command: ["fastapi", "run", "app_asr.py", "--port", "8000"]
+    command: ["fastapi", "run", "asr.py", "--port", "8000"]
     deploy:
       resources:
         reservations:
