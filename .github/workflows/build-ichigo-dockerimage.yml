@@ -6,9 +6,6 @@ on:
     paths:
       - "api/**"
       - .github/workflows/template-docker.yaml
-  push:
-    branches:
-      - chore/package # Add this to test workflow
 jobs:
   build-docker-x64:
     uses: ./.github/workflows/template-docker.yaml
