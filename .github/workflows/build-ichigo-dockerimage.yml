@@ -1,6 +1,6 @@
 name: CI - Build Ichigo Image
 on:
-  pull:
+  pull_request:
     branches:
       - main
     paths:
