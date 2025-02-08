@@ -2,7 +2,7 @@ name: CI - Build Ichigo Image
 on:
   pull:
     branches:
-      - main
+      - chore/package
     paths:
       - "api/**"
       - .github/workflows/template-docker.yaml
