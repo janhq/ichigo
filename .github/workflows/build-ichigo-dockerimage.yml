@@ -1,0 +1,20 @@
+name: CI - Build Ichigo Image
+on:
+  pull:
+    branches:
+      - main
+    paths:
+      - "api/**"
+      - .github/workflows/template-docker.yaml
+jobs:
+  build-docker-x64:
+    uses: ./.github/workflows/template-docker.yaml
+    secrets: inherit
+    with:
+      runs-on: ubuntu-latest
+      docker-file: api/Dockerfile
+      context: api
+      is_push: false
+      readme-file: ./README.md
+      docker-repo-name: menloltd/ichigo
+      tags: menloltd/ichigo:${{ github.sha }}
