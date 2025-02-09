@@ -24,7 +24,13 @@ services:
               capabilities: [ gpu ]
 ```
 
-3. Test with curl
+3. Start the container
+
+```bash
+docker compose up -d
+```
+
+4. Test with `curl`
 
 ```bash
 curl "http://localhost:8000/r2t" -X POST \
