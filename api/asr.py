@@ -1,15 +1,14 @@
+import threading
 from contextlib import asynccontextmanager
 from enum import Enum
-import threading
 from typing import Annotated
 
 import torch
 import torchaudio
-from fastapi import FastAPI, File, UploadFile, Form
+from fastapi import FastAPI, File, Form, UploadFile
 from pydantic import BaseModel
 
 from ichigo.asr import get_model
-
 
 MODEL_LOCK = threading.Lock()
 
