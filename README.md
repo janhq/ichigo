@@ -46,7 +46,7 @@ pip install ichigo
 
 Ichigo-ASR is a compact (22M parameters), open-source speech tokenizer for the `Whisper-medium model`, designed to enhance performance on multilingual with minimal impact on its original English capabilities. Unlike models that output continuous embeddings, Ịchigo-ASR compresses speech into discrete tokens, making it more compatible with large language models (LLMs) for immediate speech understanding. This speech tokenizer has been trained on over ~400 hours of English data and ~1000 hours of Vietnamese data.
 
-Ichigo-ASR is a key component of the Ichigo v0.5 family. For more details, please refer to our official [Ịchigo-ASR Repository](https://github.com/janhq/WhisperSpeech/tree/main/Ichigo-ASR).
+Ichigo-ASR is a key component of the Ichigo v0.5 family. For more details, please refer to our official [Ịchigo-ASR Repository.](https://github.com/janhq/WhisperSpeech/tree/main/Ichigo-ASR)
 
 ### Batch Processing
 
