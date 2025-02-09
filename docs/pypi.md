@@ -10,10 +10,9 @@
 ```bash
 python -m build
 pip install dist/ichigo-0.0.1-py3-none-any.whl
-cd ..
 python -c "import ichigo.asr as asr; print(asr.__file__)" 
-python -c "from ichigo.asr import transcribe; results = transcribe('ichigo-package/speech.wav'); print(results)"
-python -c "from ichigo.asr import get_stoks; stoks = get_stoks('ichigo-package/speech.wav'); print(stoks)"
+python -c "from ichigo.asr import transcribe; results = transcribe('sample.wav'); print(results)"
+python -c "from ichigo.asr import get_stoks; stoks = get_stoks('speech.wav'); print(stoks)"
 ```
 
 ## Upload into PyPI

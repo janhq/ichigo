@@ -156,5 +156,5 @@ concatenated_dataset/
 .gradio/
 test/
 cache/
-speech.wav
+sample.wav
 transcript.txt
