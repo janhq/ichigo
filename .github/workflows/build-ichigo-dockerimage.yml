@@ -1,4 +1,4 @@
-name: CI - Build Ichigo Image # Test CI
+name: CI - Build Ichigo Image
 on:
   pull_request:
     branches:
