@@ -22,4 +22,4 @@ jobs:
       context: api
       readme-file: ./README.md
       docker-repo-name: menloltd/ichigo
-      tags: menloltd/ichigo:{{ needs.get-tag.outputs.new_version }}
+      tags: menloltd/ichigo:${{ needs.get-tag.outputs.new_version }}
