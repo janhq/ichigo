@@ -37,23 +37,25 @@ Ichigo-ASR is a compact (22M parameters), open-source speech tokenizer for the `
 
 The ichigo package can handle batch processing of audio files using a single line of code, with additional parameters for available for more control.
 
+1. For single files
 ```python
 # Quick one-liner for transcription
-from ichigo.asr import transcribe, get_stoks
+from ichigo.asr import transcribe
 results = transcribe("path/to/your/file")
-tokens = get_stoks("path/to/your/file")
-
-# Or with more control using the model class
-from ichigo.asr import IchigoASR
-model = IchigoASR(config="merge-2560d")
-results = model.transcribe(
-    "path/to/your/file",
-    output_path="./output_folder",
-    extensions=(".wav", ".mp3", ".flac", ".m4a")
-)
-stoks = model.get_stoks("path/to/file")
+print(results)
+# Expected output: "{filename: transcription}"
 ```
+A transcription.txt will also stored in the same folder as "path/to/your/file"
 
+2. For multiple files
+```python
+# Quick one-liner for transcription
+from ichigo.asr import transcribe
+results = transcribe("path/to/your/folder")
+print(results)
+# Expected output: "{filename1: transcription1, filename2: transcription2, ... filenameN: transcriptionN,}"
+```
+A subfolder will be created in "path/to/your/folder" and transcriptions will be stored as "filenameN.txt" in the subfolder.
 
 ### API
 
