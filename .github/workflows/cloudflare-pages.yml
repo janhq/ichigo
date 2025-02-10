@@ -3,16 +3,19 @@ name: Menlo Ichigo
 on:
   push:
     branches:
-      - main
+      - dev
+    paths:
+      - 'docs/**'
   pull_request:
+    paths:
+      - 'docs/**'
     # Review gh actions docs if you want to further define triggers, paths, etc
     # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
-  schedule:
-    - cron: "0 22 * * 1,2,3,4,5,6"
+  workflow_dispatch:
 
 jobs:
   deploy:
-    name: Deploy to Cloudflare Pages
+    name: Deploy to CloudFlare Pages
     env:
       CLOUDFLARE_PROJECT_NAME: ichigo
     runs-on: ubuntu-latest
@@ -26,11 +29,11 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install jq
+      - name: Install jq      
         uses: dcarbone/install-jq-action@v2.0.1
 
       - name: Fill env vars
-        continue-on-error: true
+        working-directory: docs
         run: |
           env_example_file=".env.example"
           touch .env
@@ -43,16 +46,14 @@ jobs:
             fi
           done < "$env_example_file"
         env:
-          SECRETS: "${{ toJson(secrets) }}"
+          SECRETS: '${{ toJson(secrets) }}'
 
       - name: Install dependencies
-        run: npm install
+        working-directory: docs
+        run: yarn install
       - name: Build website
-        run: export NODE_ENV=production && npm run build
-
-      - name: Copy redirect file
-        continue-on-error: true
-        run: cp _redirects build/_redirects
+        working-directory: docs
+        run: export NODE_ENV=production && yarn build && cp _redirects out/_redirects
 
       - name: Publish to Cloudflare Pages PR Preview and Staging
         if: github.event_name == 'pull_request'
@@ -61,7 +62,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: ${{ env.CLOUDFLARE_PROJECT_NAME }}
-          directory: ./out
+          directory: ./docs/out
           # Optional: Enable this if you want to have GitHub Deployments triggered
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
         id: deployCloudflarePages
@@ -70,16 +71,16 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           message: |
-            Preview URL: ${{ steps.deployCloudflarePages.outputs.url }}
+              Preview URL: ${{ steps.deployCloudflarePages.outputs.url }}
 
       - name: Publish to Cloudflare Pages Production
-        if: (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/main' && github.event.pull_request.head.repo.full_name != github.repository
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/dev') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/dev')
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: ${{ env.CLOUDFLARE_PROJECT_NAME }}
-          directory: ./out
+          directory: ./docs/out
           branch: main
           # Optional: Enable this if you want to have GitHub Deployments triggered
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
