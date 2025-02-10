@@ -1,0 +1,55 @@
+---
+title: "Menlo Research Pte. Ltd."
+description: "Menlo description"
+center: true
+---
+
+import ShimmerButton from "@/components/shimmer-button";
+import { FaDiscord } from "react-icons/fa";
+
+<br />
+<br />
+<br />
+<br />
+
+# Menlo Research Pte. Ltd.
+
+Menlo is a Local AI Company.
+
+We are the creators and lead maintainers of:
+
+- 👋 [Jan](https://jan.ai): Local AI Assistant (~1.7mn downloads)
+- 🤖 [Cortex](https://cortex.so): Local AI Toolkit
+
+We train open source models:
+
+- 🍓 [Ichigo](https://github.com/homebrewltd/ichigo): Local Real-Time Voice AI
+
+We tinker with hardware:
+
+- 💡 Menlo: AI Hardware <span className="rounded-lg py-1 px-2 bg-gray-100 border border-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-700 text-xs">Coming Soon</span>
+- ⛩️ Xanadu: GPU Cluster <span className="rounded-lg py-1 px-2 bg-gray-100 border border-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-700 text-xs">Coming Soon</span>
+
+<div className="flex flex-col md:flex-row items-start md:items-center mt-10 gap-4">
+  <ShimmerButton
+    className="shadow-2xl shadow-[#5765F2] flex gap-2 transition-all hover:scale-105"
+    background="#5765F2"
+    onClick={() => window.open("https://discord.gg/FTk2MvZwJH", "_blank")}
+  >
+    <FaDiscord className="text-2xl text-white" />
+    <div>
+      <span className="text-base font-sans text-white font-medium">
+        Join our Discord
+      </span>
+    </div>
+  </ShimmerButton>
+  <a
+    className="bg-neutral-700 py-3 px-6 rounded-full border border-neutral-300 border-neutral-600 text-center text-white"
+    href="/work-with-us"
+  >
+    Work with us
+  </a>
+</div>
+
+We are a fully remote team.
+See [open roles](https://homebrew.bamboohr.com/careers).
