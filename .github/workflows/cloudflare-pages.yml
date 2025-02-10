@@ -3,7 +3,7 @@ name: Menlo Ichigo
 on:
   push:
     branches:
-      - dev
+      - main
     paths:
       - 'docs/**'
   pull_request:
