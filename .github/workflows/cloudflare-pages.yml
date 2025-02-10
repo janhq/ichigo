@@ -33,6 +33,7 @@ jobs:
         uses: dcarbone/install-jq-action@v2.0.1
 
       - name: Fill env vars
+        continue-on-error: true
         working-directory: docs
         run: |
           env_example_file=".env.example"
