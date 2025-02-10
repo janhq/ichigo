@@ -1,6 +1,6 @@
 <div align="center">
 
-# :strawberry: Ichigo-LLM and 🍰 Ichigo-ASR
+# :strawberry: Ichigo: A simple speech package optimised for local inference
 <a href='https://homebrew.ltd/blog/llama3-just-got-ears'><img src='https://img.shields.io/badge/Project-Blog-Green'></a>
 <a href='https://ichigo.homebrew.ltd/'><img src='https://img.shields.io/badge/Project-Demo-violet'></a>
 <a href='https://arxiv.org/pdf/2410.15316'><img src='https://img.shields.io/badge/Paper-Arxiv-red'></a>
@@ -8,35 +8,22 @@
 <a href='https://huggingface.co/homebrewltd'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Data-green'></a>
 <a href='https://colab.research.google.com/drive/18IiwN0AzBZaox5o0iidXqWD1xKq11XbZ?usp=sharing'><img src='https://colab.research.google.com/assets/colab-badge.svg'></a>
 
-[**About**](#about) | [**Installation**](#installation) | [**Ichigo-ASR**](#ichigo-asr) 
+[**About**](#About) | [**Installation**](#Installation) | [**Ichigo-ASR**](#Ichigo-ASR) | [**Ichigo-LLM**](#Ichigo-LLM)
 
-
-  <img src="assets/ichigo.jpeg" width="400"/>
-  <p><small>Homebrewed early-fusion speech model and ASR model</a></small></p>
 </div>
-
-> [!NOTE]  
-> Update: December 30, 2024
-> - Released Ichigo-ASR v0.1: a 22M-parameter quantizer built on Whisper Medium for Vietnamese and English.
-> - Open-source, optimized for low-resource languages, using discrete tokens for LLM integration and advanced speech understanding.
-
-> [!WARNING]  
-> :strawberry: Ichigo-LLM and 🍰 Ichigo-ASR are open research experiments
-> - Join us in the  `#research` channel in [Homebrew's Discord](https://discord.com/invite/FTk2MvZwJH)
-> - We livestream training runs in `#research-livestream`
 
 ## About
 
-:strawberry: Ichigo is an open, ongoing research experiment to extend a text-based LLM to have native "listening" ability. Think of it as an open data, open weight, on device Siri.
+This package does 3 things: 
+1) Automatic Speech Recognition: [**Ichigo-ASR**](#ichigo-asr)
+2) Text to Speech: Coming Soon
+3) Speech Language Model: [**Ichigo-LLM**](#ichigo-llm) (experimental)
 
-It uses an [early fusion](https://medium.com/@raj.pulapakura/multimodal-models-and-fusion-a-complete-guide-225ca91f6861#:~:text=3.3.,-Early%20Fusion&text=Early%20fusion%20refers%20to%20combining,fused%20representation%20through%20the%20model.) technique inspired by [Meta's Chameleon paper](https://arxiv.org/abs/2405.09818).
-
-We ~~build~~ train in public:
-- [Ichigo v0.3 Checkpoint Writeup](https://homebrew.ltd/blog/llama-learns-to-talk)
-- [Ichigo v0.2 Checkpoint Writeup](https://homebrew.ltd/blog/llama3-just-got-ears)
-- [Ichigo v0.1 Checkpoint Writeup](https://homebrew.ltd/blog/can-llama-3-listen)
+It contains only inference code, and caters to most local inference use cases around these three tasks.
 
 ## Installation
+
+To get started, simply install the package.
 
 ```bash
 pip install ichigo
@@ -46,9 +33,9 @@ pip install ichigo
 
 Ichigo-ASR is a compact (22M parameters), open-source speech tokenizer for the `Whisper-medium model`, designed to enhance performance on multilingual with minimal impact on its original English capabilities. Unlike models that output continuous embeddings, Ịchigo-ASR compresses speech into discrete tokens, making it more compatible with large language models (LLMs) for immediate speech understanding. This speech tokenizer has been trained on over ~400 hours of English data and ~1000 hours of Vietnamese data.
 
-Ichigo-ASR is a key component of the Ichigo v0.5 family. For more details, please refer to our official [Ịchigo-ASR Repository](https://github.com/janhq/WhisperSpeech/tree/main/Ichigo-ASR).
-
 ### Batch Processing
+
+The ichigo package can handle batch processing of audio files using a single line of code, with additional parameters for available for more control.
 
 ```python
 # Quick one-liner for transcription
@@ -67,7 +54,10 @@ results = model.transcribe(
 stoks = model.get_stoks("path/to/file")
 ```
 
+
 ### API
+
+For integration with frontend, a python fastAPI is also available. This api also does batch processing. Streaming is currently not supported.
 
 1. Start the server
 
@@ -102,6 +92,21 @@ curl "http://localhost:8000/r2t" -X POST \
 
 You can also access the API documentation at `http://localhost:8000/docs`
 
+## Ichigo-LLM
+
+:strawberry: Ichigo-LLM is an open, ongoing research experiment to extend a text-based LLM to have native "listening" ability. Think of it as an open data, open weight, on device Siri.
+
+It uses an [early fusion](https://medium.com/@raj.pulapakura/multimodal-models-and-fusion-a-complete-guide-225ca91f6861#:~:text=3.3.,-Early%20Fusion&text=Early%20fusion%20refers%20to%20combining,fused%20representation%20through%20the%20model.) technique inspired by [Meta's Chameleon paper](https://arxiv.org/abs/2405.09818).
+
+We ~~build~~ train in public:
+- [Ichigo v0.3 Checkpoint Writeup](https://homebrew.ltd/blog/llama-learns-to-talk)
+- [Ichigo v0.2 Checkpoint Writeup](https://homebrew.ltd/blog/llama3-just-got-ears)
+- [Ichigo v0.1 Checkpoint Writeup](https://homebrew.ltd/blog/can-llama-3-listen)
+
+## Ichigo-TTS
+
+Coming Soon
+  
 ## Join Us
 
 :strawberry: Ichigo-LLM and 🍰 Ichigo-ASR is an open research project. We're looking for collaborators, and will likely move towards crowdsourcing speech datasets in the future.
@@ -109,6 +114,13 @@ You can also access the API documentation at `http://localhost:8000/docs`
 ## References
 
 ```bibtex
+@article{dao2024ichigo,
+  title={Ichigo: Mixed-Modal Early-Fusion Realtime Voice Assistant},
+  author={Dao, Alan and Vu, Dinh Bach and Ha, Huy Hoang},
+  journal={arXiv preprint arXiv:2410.15316},
+  year={2024}
+}
+
 @misc{chameleonteam2024chameleonmixedmodalearlyfusionfoundation,
       title={Chameleon: Mixed-Modal Early-Fusion Foundation Models}, 
       author={Chameleon Team},
