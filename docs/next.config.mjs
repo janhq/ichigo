@@ -5,4 +5,16 @@ const withNextra = nextra({
   themeConfig: "./theme.config.tsx",
 });
 
-export default withNextra();
+const nextConfig = {
+  reactStrictMode: true,
+  output: "export",
+  env: {
+    GTM_ID: process.env.GTM_ID,
+  },
+  images: {
+    formats: ["image/webp"],
+    unoptimized: true,
+  },
+};
+
+export default withNextra(nextConfig);
