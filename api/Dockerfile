@@ -8,3 +8,5 @@ RUN apt update && \
 COPY . /code
 RUN pip install ichigo
 RUN pip install --no-cache-dir "fastapi[standard]==0.115.*"
+
+ENTRYPOINT ["fastapi", "run", "asr.py", "--port", "8000"]
