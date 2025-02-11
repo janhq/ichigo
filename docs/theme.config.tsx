@@ -7,13 +7,14 @@ const config: DocsThemeConfig = {
     <span className="flex gap-x-8 items-center">
       <div className="flex">
         {/* <LogoMark /> */}
-        <span className="ml-2 font-semibold">Menlo Guide</span>
+        <span className="ml-2 font-semibold">Menlo Ichigo</span>
       </div>
     </span>
   ),
   project: {
-    link: "https://github.com/janhq/guide",
+    link: "https://github.com/janhq/ichigo",
   },
+  docsRepositoryBase: "https://github.com/janhq/ichigo/tree/main/docs",
   footer: {
     content: (
       <span>
