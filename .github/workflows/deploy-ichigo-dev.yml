@@ -1,0 +1,25 @@
+name: CI - Deploy BE to dev env
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "api/**"
+      - .github/workflows/deploy-ichigo-dev.yml
+      - .github/workflows/template-docker.yaml
+
+jobs:
+  build-docker-x64:
+    uses: ./.github/workflows/template-docker.yaml
+    secrets: inherit
+    with:
+      runs-on: ubuntu-latest
+      docker-file: api/Dockerfile
+      context: api
+      readme-file: ./README.md
+      docker-repo-name: menloltd/ichigo
+      tags: menloltd/ichigo:dev-${{ github.sha }}
+      build-args: |
+        GIT_COMMIT=menloltd/ichigo:dev-${{ github.sha }}
+        GIT_COMMIT_MESSAGE=${{ github.event.head_commit.message }}
