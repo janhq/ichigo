@@ -30,3 +30,9 @@ def get_stoks(input_path: str, **kwargs) -> torch.Tensor:
     """Get STOKS for a single file using default model"""
     model = get_model(**kwargs)
     return model.get_stoks(input_path)
+
+
+def decode_stoks(stoks: torch.Tensor, **kwargs) -> str:
+    """Decode STOKS using default model"""
+    model = get_model(**kwargs)
+    return model.decode_stoks(stoks)

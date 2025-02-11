@@ -75,6 +75,11 @@ class IchigoASR:
         stoks = self.quantizer(embs, n_frames, return_stoks=True)
         return stoks
 
+    def decode_stoks(self, stoks: torch.Tensor):
+        embeds = self.quantizer.dequantize(stoks)
+        output = self.r2t(embeds)[0].text
+        return output
+
     def transcribe(
         self,
         input_path: Union[str, Path],
