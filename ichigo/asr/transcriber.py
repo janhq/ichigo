@@ -80,11 +80,37 @@ class IchigoASR:
         output = self.r2t(embeds)[0].text
         return output
 
+    def _find_split_point(self, wav: torch.Tensor, start_idx: int, end_idx: int) -> int:
+        """Find the best point to split audio by looking for silence or low amplitude.
+
+        Args:
+            wav: Audio tensor [1, T]
+            start_idx: Start index of search region
+            end_idx: End index of search region
+
+        Returns:
+            Index of best splitting point
+        """
+        segment = wav.abs().squeeze(0)[start_idx:end_idx].cpu().numpy()
+
+        # Calculate RMS energy in small windows
+        window_size = 1600  # 100ms windows at 16kHz
+        energies = []
+        for i in range(0, len(segment) - window_size, window_size):
+            window = segment[i : i + window_size]
+            energy = (window**2).mean() ** 0.5
+            energies.append((i + start_idx, energy))
+
+        quietest_idx, _ = min(energies, key=lambda x: x[1])
+        return quietest_idx
+
     def transcribe(
         self,
         input_path: Union[str, Path],
         output_path: Optional[Union[str, Path]] = "transcription.txt",
         extensions: tuple = (".wav", ".mp3", ".flac"),
+        chunk_size: int = 320000,
+        overlap_size: int = 16000,
     ) -> Union[str, Dict[str, str]]:
         """Transcribe audio file or folder of audio files.
 
@@ -111,11 +137,36 @@ class IchigoASR:
             wav = self.preprocess(wav, sr)
             duration = wav.shape[1] / 16000
 
-            # ! Inference
-            embs, n_frames = self.s2r(wav)
-            dequantize_embed = self.quantizer(embs, n_frames)
-            result = self.r2t(dequantize_embed)
-            transcript = result[0].text
+            # Split long audio into chunks
+            if wav.shape[1] <= chunk_size:
+                chunks = [wav]
+            else:
+                chunks = []
+                i = 0
+                while i < wav.shape[1]:
+                    if i + chunk_size >= wav.shape[1]:
+                        # Handle the last chunk
+                        chunk = wav[:, i:]
+                        chunks.append(chunk)
+                        break
+
+                    # Find the best split point in the overlap region
+                    search_start = i + chunk_size - overlap_size
+                    search_end = min(i + chunk_size + overlap_size, wav.shape[1])
+                    split_point = self._find_split_point(wav, search_start, search_end)
+
+                    # Extract chunk up to the split point
+                    chunk = wav[:, i:split_point]
+                    chunks.append(chunk)
+                    i = split_point
+
+            results = []
+            for chunk in chunks:
+                embs, n_frames = self.s2r(chunk)
+                dequantize_embed = self.quantizer(embs, n_frames)
+                result = self.r2t(dequantize_embed)
+                results.append(result[0].text.strip())
+            transcript = " ".join(results)
 
             process_time = time.time() - start_time
             metadata = {
