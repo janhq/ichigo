@@ -135,7 +135,7 @@ class IchigoASR:
             if wav.shape[0] > 1:
                 wav = wav.mean(0, keepdim=True)
             wav = self.preprocess(wav, sr)
-            duration = wav.shape[1] / 16000
+            audio_length = wav.shape[1] / 16000
 
             # Split long audio into chunks
             if wav.shape[1] <= chunk_size:
@@ -169,10 +169,12 @@ class IchigoASR:
             transcript = " ".join(results)
 
             process_time = time.time() - start_time
+
             metadata = {
-                "duration": duration,
+                "stok_rate": self.get_stoks(input_path).shape[-1] / audio_length,
+                "audio_length": audio_length,
                 "process_time": process_time,
-                "rtf": process_time / duration if duration > 0 else 0,
+                "rtf": process_time / audio_length if audio_length > 0 else 0,
             }
 
             if output_path:
@@ -222,7 +224,6 @@ class IchigoASR:
                     try:
                         transcript, _ = self.transcribe(audio_file, None)
                         results[audio_file.name] = transcript
-                        # Escape any commas in the transcript and wrap in quotes if needed
                         safe_transcript = (
                             f'"{transcript}"' if "," in transcript else transcript
                         )
