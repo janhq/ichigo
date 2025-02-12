@@ -184,11 +184,11 @@ class IchigoASR:
         # Handle folder
         elif input_path.is_dir():
             if output_path is None:
-                output_path = input_path / "transcription.txt"
+                output_path = input_path / "transcription.csv"
             else:
                 output_path = Path(output_path)
                 if output_path.is_dir():
-                    output_path = output_path / "transcription.txt"
+                    output_path = output_path / "transcription.csv"
 
             audio_files = [
                 f
@@ -216,18 +216,23 @@ class IchigoASR:
             results = {}
             # Create or open the transcription file
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(output_path, "w", encoding="utf-8") as f:
+            with open(output_path, "w", encoding="utf-8", newline="") as f:
+                f.write("filename,transcription\n")  # CSV header
                 for audio_file in sorted(audio_files):
                     try:
                         transcript, _ = self.transcribe(audio_file, None)
                         results[audio_file.name] = transcript
-                        f.write(f"{audio_file.name}\t{transcript}\n")
+                        # Escape any commas in the transcript and wrap in quotes if needed
+                        safe_transcript = (
+                            f'"{transcript}"' if "," in transcript else transcript
+                        )
+                        f.write(f"{audio_file.name},{safe_transcript}\n")
                         print(f"Successfully transcribed: {audio_file.name}")
                     except Exception as e:
                         error_msg = f"Error processing {audio_file.name}: {str(e)}"
                         print(f"ERROR: {error_msg}")
                         results[audio_file.name] = f"ERROR: {error_msg}"
-                        f.write(f"{audio_file.name}\tERROR: {error_msg}\n")
+                        f.write(f'{audio_file.name},"ERROR: {error_msg}"\n')
 
             success = sum(1 for v in results.values() if not v.startswith("ERROR"))
             failed = sum(1 for v in results.values() if v.startswith("ERROR"))
