@@ -10,7 +10,7 @@
 
 [**About**](#About) | [**Installation**](#Installation) | [**Ichigo-ASR**](#Ichigo-ASR) | [**Ichigo-LLM**](#Ichigo-LLM)
 
-<img src="assets/ichigo.jpeg" width="400"/>
+<img src="assets/ichigo.jpeg" width="500"/>
 </div>
 
 ## About
