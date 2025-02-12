@@ -135,7 +135,7 @@ class IchigoASR:
             if wav.shape[0] > 1:
                 wav = wav.mean(0, keepdim=True)
             wav = self.preprocess(wav, sr)
-            duration = wav.shape[1] / 16000
+            audio_length = wav.shape[1] / 16000
 
             # Split long audio into chunks
             if wav.shape[1] <= chunk_size:
@@ -169,10 +169,12 @@ class IchigoASR:
             transcript = " ".join(results)
 
             process_time = time.time() - start_time
+
             metadata = {
-                "duration": duration,
+                "stok_rate": self.get_stoks(input_path).shape[-1] / audio_length,
+                "audio_length": audio_length,
                 "process_time": process_time,
-                "rtf": process_time / duration if duration > 0 else 0,
+                "rtf": process_time / audio_length if audio_length > 0 else 0,
             }
 
             if output_path:
@@ -222,7 +224,6 @@ class IchigoASR:
                     try:
                         transcript, _ = self.transcribe(audio_file, None)
                         results[audio_file.name] = transcript
-                        # Escape any commas in the transcript and wrap in quotes if needed
                         safe_transcript = (
                             f'"{transcript}"' if "," in transcript else transcript
                         )
@@ -247,3 +248,36 @@ class IchigoASR:
 
         else:
             raise ValueError(f"Input path does not exist: {input_path}")
+
+    def transcribe_tensor(
+        self, wav: torch.Tensor, chunk_sec: int = 20, overlap_size: int = 1
+    ) -> str:
+        chunk_size = chunk_sec * 160000
+        overlap_sec = overlap_size * 16000
+        if wav.shape[1] <= chunk_size:
+            chunks = [wav]
+        else:
+            chunks = []
+            i = 0
+            while i < wav.shape[1]:
+                if i + chunk_size >= wav.shape[1]:
+                    chunk = wav[:, i:]
+                    chunks.append(chunk)
+                    break
+
+                search_start = i + chunk_size - overlap_size
+                search_end = min(i + chunk_size + overlap_size, wav.shape[1])
+                split_point = self._find_split_point(wav, search_start, search_end)
+
+                chunk = wav[:, i:split_point]
+                chunks.append(chunk)
+                i = split_point
+
+        results = []
+        for chunk in chunks:
+            embs, n_frames = self.s2r(chunk)
+            dequantize_embed = self.quantizer(embs, n_frames)
+            result = self.r2t(dequantize_embed)
+            results.append(result[0].text.strip())
+        transcript = " ".join(results)
+        return transcript
