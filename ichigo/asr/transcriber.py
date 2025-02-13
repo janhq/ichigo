@@ -251,10 +251,8 @@ class IchigoASR:
         else:
             raise ValueError(f"Input path does not exist: {input_path}")
 
-    def transcribe_tensor(
-        self, wav, chunk: float = 20.0, overlap: float = 1.0
-    ) -> str:
-        chunk_size = int(chunk * 160000)
+    def transcribe_tensor(self, wav, chunk: float = 20.0, overlap: float = 1.0) -> str:
+        chunk_size = int(chunk * 16000)
         overlap_size = int(overlap * 16000)
 
         if wav.shape[1] <= chunk_size:
