@@ -146,7 +146,7 @@ def _(
     wav, sr = torchaudio.load(file.file)
     wav = preprocess_audio(wav, sr)
 
-    CHUNK_SIZE = SAMPLE_RATE * 30  # 30 seconds
+    CHUNK_SIZE = SAMPLE_RATE * 20  # 20 seconds
     OVERLAP_SIZE = SAMPLE_RATE * 1  # 1 second
 
     chunks = []
