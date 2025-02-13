@@ -109,8 +109,8 @@ class IchigoASR:
         input_path: Union[str, Path],
         output_path: Optional[Union[str, Path]] = "transcription.txt",
         extensions: tuple = (".wav", ".mp3", ".flac"),
-        chunk_size: int = 320000,
-        overlap_size: int = 16000,
+        chunk: float = 20.0,
+        overlap: float = 1.0,
     ) -> Union[str, Dict[str, str]]:
         """Transcribe audio file or folder of audio files.
 
@@ -124,6 +124,8 @@ class IchigoASR:
             For folder: dictionary mapping filenames to their transcripts
         """
         input_path = Path(input_path)
+        chunk_size = int(chunk * 16000)
+        overlap_size = int(overlap * 16000)
 
         # Handle single file
         if input_path.is_file():
@@ -250,10 +252,11 @@ class IchigoASR:
             raise ValueError(f"Input path does not exist: {input_path}")
 
     def transcribe_tensor(
-        self, wav: torch.Tensor, chunk_sec: int = 20, overlap_size: int = 1
+        self, wav, chunk_sec: float = 20.0, overlap_sec: float = 1.0
     ) -> str:
-        chunk_size = chunk_sec * 160000
-        overlap_sec = overlap_size * 16000
+        chunk_size = int(chunk_sec * 160000)
+        overlap_size = int(overlap_sec * 16000)
+
         if wav.shape[1] <= chunk_size:
             chunks = [wav]
         else:
@@ -280,4 +283,5 @@ class IchigoASR:
             result = self.r2t(dequantize_embed)
             results.append(result[0].text.strip())
         transcript = " ".join(results)
+
         return transcript
