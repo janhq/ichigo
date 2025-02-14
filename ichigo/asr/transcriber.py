@@ -42,7 +42,7 @@ def load_quantizer(ref, config):
 class IchigoASR:
     def __init__(
         self,
-        config: str = "merge-2560d",
+        config: str = "ichigo-quantizer-2501-2560d-en-vi",
     ):
         # Load config
         config_path = Path(__file__).parent / "config" / f"{config}.yaml"
