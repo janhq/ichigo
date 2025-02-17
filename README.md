@@ -2,34 +2,20 @@
 
 # :strawberry: Ichigo: A simple speech package for developers
 <a href='https://homebrew.ltd/blog/llama3-just-got-ears'><img src='https://img.shields.io/badge/Project-Blog-Green'></a>
-<!---
-<a href='https://platform.menlo.ai/'><img src='https://img.shields.io/badge/Project-Demo-violet'></a> #update to platform when it is ready
-<a href='https://arxiv.org/pdf/2410.15316'><img src='https://img.shields.io/badge/Paper-Arxiv-red'></a> #update to technical report when it is ready
--->
 <a href='https://huggingface.co/homebrewltd'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-blue'></a>
 <a href='https://huggingface.co/homebrewltd'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Data-green'></a>
 <!---
+<a href='https://platform.menlo.ai/'><img src='https://img.shields.io/badge/Project-Demo-violet'></a> #update to platform when it is ready
+<a href='https://arxiv.org/pdf/2410.15316'><img src='https://img.shields.io/badge/Paper-Arxiv-red'></a> #update to technical report when it is ready
 <a href='https://colab.research.google.com/drive/18IiwN0AzBZaox5o0iidXqWD1xKq11XbZ?usp=sharing'><img src='https://colab.research.google.com/assets/colab-badge.svg'></a> #prepare a new google colab notebook for demo
 -->
 
-[**About**](#About) | [**Installation**](#Installation) | [**Ichigo-ASR**](#Ichigo-ASR) | [**Ichigo-LLM**](#Ichigo-LLM)
+[**About**](#About) | [**Installation**](#Installation) | [**Ichigo-ASR**](#Ichigo-ASR) | [**Ichigo-LLM**](#Ichigo-LLM) | [**Ichigo-TTS**](#Ichigo-TTS) 
 
 </div>
 
 ## About
 Welcome to **Ichigo**, a streamlined speech package designed to empower developers with cutting-edge speech models and tools, cultivated by the innovative Ichigo team. The rapidly evolving landscape of speech technology demands a solution that simplifies and unifies speech tasks. Ichigo does just that, enabling developers with straightforward access to powerful models through intuitive Python interfaces or a scalable FastAPI service, leaving behind the tedious intricacies of audio processing so you can focus on what truly matters—deploying and improving your systems.
-
-### Not your grandfather's speech package
-<div align="center">
-<img width="500" alt="Image" src="https://github.com/user-attachments/assets/a576bde9-9a56-4a4a-9c06-1e7230087f2a" />
-</div>
-We have modularized the ASR and TTS speech tasks so that they can share components and speak the same language. This is powerful because we can leverage ASR data to train TTS and vice-versa, and using our novel model, Speechless, we can train speech language models without using speech (paper coming soon).
-
-We built this package around what we our vision of the future of speech -- the unification of speech tasks into a single representation framework. Today, many speech models are monolithic models trained end-to-end for a single task. However, subcomponents of these models are in fact reusable for other tasks. This means that ASR fine-tuning can be pre-training for TTS, allowing us to bootstrap better models even with limited training data. We designed this package with the right level of modularity to enable people to train their own models in this manner.
-
-Our package supports underlying abstractions that can support different kinds of models and we welcome researchers to work with us to build these models if you find this way of doing things helpful. You should join our discord community where we can talk about this. A technical report explaining how this framework works and how we think about the future of speech will be uploaded soon.
-
-Everything here is a work in progress, and we welcome all kinds of feedback and collaborations
 
 ### List of Capabilities
 This package does 3 things: 
@@ -126,7 +112,21 @@ We ~~build~~ train in public:
 ## Ichigo-TTS
 
 Coming Soon
-  
+
+## Background
+
+### Not your grandfather's speech package
+<div align="center">
+<img width="500" alt="Image" src="https://github.com/user-attachments/assets/a576bde9-9a56-4a4a-9c06-1e7230087f2a" />
+</div>
+We have modularized the ASR and TTS speech tasks so that they can share components and speak the same language. This is powerful because we can leverage ASR data to train TTS and vice-versa, and using our novel model, Speechless, we can train speech language models without using speech (paper coming soon).
+
+We built this package around what we our vision of the future of speech -- the unification of speech tasks into a single representation framework. Today, many speech models are monolithic models trained end-to-end for a single task. However, subcomponents of these models are in fact reusable for other tasks. This means that ASR fine-tuning can be pre-training for TTS, allowing us to bootstrap better models even with limited training data. We designed this package with the right level of modularity to enable people to train their own models in this manner.
+
+Our package supports underlying abstractions that can support different kinds of models and we welcome researchers to work with us to build these models if you find this way of doing things helpful. You should join our discord community where we can talk about this. A technical report explaining how this framework works and how we think about the future of speech will be uploaded soon.
+
+Everything here is a work in progress, and we welcome all kinds of feedback and collaborations
+
 ## Join Us
 
 :strawberry: Ichigo-LLM and 🍰 Ichigo-ASR is an open research project. We're looking for collaborators, and will likely move towards crowdsourcing speech datasets in the future.
