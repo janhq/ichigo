@@ -45,7 +45,11 @@ class IchigoASR:
         config: str = "ichigo-quantizer-2501-2560d-en-vi",
     ):
         # Load config
-        config_path = Path(__file__).parent / "config" / f"{config}.yaml"
+        if not config.endswith(".yaml"):
+            config_path = Path(__file__).parent / "config" / f"{config}.yaml"
+        else:
+            config_path = Path(config)
+
         with open(config_path) as f:
             self.config = yaml.safe_load(f)
 
