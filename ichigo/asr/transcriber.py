@@ -91,6 +91,9 @@ class IchigoASR:
         Returns:
             Index of best splitting point
         """
+        if start_idx >= end_idx:
+            return start_idx
+
         segment = wav.abs().squeeze(0)[start_idx:end_idx].cpu().numpy()
 
         # Calculate RMS energy in small windows
