@@ -45,7 +45,11 @@ class IchigoASR:
         config: str = "ichigo-quantizer-2501-2560d-en-vi",
     ):
         # Load config
-        config_path = Path(__file__).parent / "config" / f"{config}.yaml"
+        if not config.endswith(".yaml"):
+            config_path = Path(__file__).parent / "config" / f"{config}.yaml"
+        else:
+            config_path = Path(config)
+
         with open(config_path) as f:
             self.config = yaml.safe_load(f)
 
@@ -257,6 +261,7 @@ class IchigoASR:
     def transcribe_tensor(self, wav, chunk: float = 20.0, overlap: float = 1.0) -> str:
         chunk_size = int(chunk * 16000)
         overlap_size = int(overlap * 16000)
+        min_chunk_size = 400
 
         if wav.shape[1] <= chunk_size:
             chunks = [wav]
@@ -265,8 +270,13 @@ class IchigoASR:
             i = 0
             while i < wav.shape[1]:
                 if i + chunk_size >= wav.shape[1]:
-                    chunk = wav[:, i:]
-                    chunks.append(chunk)
+                    # For the last chunk, if it's too small, merge with previous chunk
+                    remaining = wav.shape[1] - i
+                    if remaining < min_chunk_size and chunks:
+                        chunks[-1] = torch.cat([chunks[-1], wav[:, i:]], dim=1)
+                    else:
+                        chunk = wav[:, i:]
+                        chunks.append(chunk)
                     break
 
                 search_start = i + chunk_size - overlap_size
