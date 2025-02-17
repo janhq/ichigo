@@ -261,7 +261,7 @@ class IchigoASR:
     def transcribe_tensor(self, wav, chunk: float = 20.0, overlap: float = 1.0) -> str:
         chunk_size = int(chunk * 16000)
         overlap_size = int(overlap * 16000)
-        min_chunk_size = 400
+        min_chunk_size = 16000
 
         if wav.shape[1] <= chunk_size:
             chunks = [wav]
