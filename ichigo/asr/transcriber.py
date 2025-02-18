@@ -42,7 +42,7 @@ def load_quantizer(ref, config):
 class IchigoASR:
     def __init__(
         self,
-        config: str = "ichigo-quantizer-2501-2560d-en-vi",
+        config: str = "ichigo-asr-2501-en-vi",
     ):
         # Load config
         if not config.endswith(".yaml"):
