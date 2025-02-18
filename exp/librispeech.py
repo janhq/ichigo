@@ -1,60 +1,125 @@
-import json
+import argparse
+import logging
 import os
+from typing import List, Optional, Tuple
 
 import jiwer
 import pandas as pd
 import torch
 import torchaudio
+import whisper
 from tqdm import tqdm
 from whisper.normalizers import EnglishTextNormalizer
 
 from ichigo.asr import IchigoASR
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-class LibriSpeechIchigo(torch.utils.data.Dataset):
-    def __init__(self, split="test-clean"):
-        self.dataset = torchaudio.datasets.LIBRISPEECH(
-            root=os.path.expanduser("~/.cache"),
-            url=split,
-            download=True,
-        )
+
+class LibriSpeechASR(torch.utils.data.Dataset):
+    """LibriSpeech dataset wrapper for ASR evaluation."""
+
+    def __init__(
+        self,
+        is_whisper=False,
+        split: str = "test-clean",
+        cache_dir: Optional[str] = None,
+    ):
+        """
+        Initialize the LibriSpeech dataset.
+
+        Args:
+            split: Dataset split to use ("test-clean", "test-other", etc.)
+            cache_dir: Directory to cache the dataset. Defaults to ~/.cache
+        """
+        self.cache_dir = cache_dir or os.path.expanduser("~/.cache")
+        try:
+            self.dataset = torchaudio.datasets.LIBRISPEECH(
+                root=self.cache_dir,
+                url=split,
+                download=True,
+            )
+        except Exception as e:
+            raise RuntimeError(f"Failed to load LibriSpeech dataset: {e}")
+
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.is_whisper = is_whisper
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.dataset)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int) -> Tuple[torch.Tensor, str]:
         audio, sample_rate, text, _, _, _ = self.dataset[item]
-        audio = audio.to(self.device)
-        assert sample_rate == 16000
-        return audio, text
+        if sample_rate != 16000:
+            raise ValueError(f"Expected sample rate 16000, got {sample_rate}")
+        if self.is_whisper:
+            audio = whisper.pad_or_trim(audio.flatten()).to(self.device)
+            mel = whisper.log_mel_spectrogram(audio)
+            return (mel, text)
+        else:
+            audio = audio.to(self.device)
+            return audio, text
 
 
-def evaluate_config(dataset, time_limit, chunk_sec, overlap_sec, output_dir):
-    # Create experiment name
-    exp_name = f"chunk{chunk_sec}_overlap{overlap_sec}"
-    print(f"\nEvaluating configuration: {exp_name}")
+def evaluate_wer(
+    dataset: LibriSpeechASR,
+    model_name: str = "ichigo-asr-2501-en",
+    dataset_name: str = "test-clean",
+    chunk_size: int = 1000000,
+) -> Tuple[str, float]:
+    """
+    Evaluate Word Error Rate on the dataset.
 
-    # Initialize ASR model
-    asr = IchigoASR("ichigo-asr-2501-en")
-    normalizer = EnglishTextNormalizer()
+    Args:
+        dataset: LibriSpeech dataset instance
+        model_name: Name of the model to evaluate
+        dataset_name: Name of the dataset split
+        chunk_size: Audio chunk size for processing
 
-    predictions = []
-    gt = []
-    durations = []
+    Returns:
+        Tuple of experiment name and WER score
+    """
+    exp_name = f"{model_name}_{dataset_name}"
+    logger.info(f"Starting evaluation: {exp_name}")
 
-    # Process dataset
-    for idx in tqdm(range(len(dataset))):
-        audio, text = dataset[idx]
-        duration = audio.shape[1] / 16000
+    try:
+        if model_name.startswith(("ichigo-asr", "whispervq")):
+            asr = IchigoASR(model_name)
+        elif model_name.startswith("medium-whisper"):
+            asr = whisper.load_model("medium")
+        else:
+            raise ValueError(f"Unsupported model type: {model_name}")
+    except Exception as e:
+        raise RuntimeError(f"Failed to load model {model_name}: {e}")
 
-        if duration >= time_limit:
-            result = asr.transcribe_tensor(audio, chunk=chunk_sec, overlap=overlap_sec)
-            predictions.append(result)
+    predictions: List[str] = []
+    gt: List[str] = []
+    durations: List[float] = []
+
+    for idx in tqdm(range(len(dataset)), desc="Processing audio"):
+        try:
+            audio, text = dataset[idx]
+            duration = audio.shape[1] / 16000
+
+            if isinstance(asr, IchigoASR):
+                result = asr.transcribe_tensor(audio, chunk=chunk_size)
+                predictions.append(result)
+            else:
+                result = asr.decode(
+                    audio,
+                    whisper.DecodingOptions(language="en", without_timestamps=True),
+                )
+                predictions.append(result.text)
+
             gt.append(text)
             durations.append(duration)
+        except Exception as e:
+            logger.error(f"Error processing sample {idx}: {e}")
+            continue
 
-    # Create DataFrame
+    normalizer = EnglishTextNormalizer()
+
     data = pd.DataFrame(
         {
             "duration": durations,
@@ -65,54 +130,51 @@ def evaluate_config(dataset, time_limit, chunk_sec, overlap_sec, output_dir):
         }
     )
 
-    # Calculate WER
     wer = jiwer.wer(list(data["gt_clean"]), list(data["predictions_clean"]))
 
     # Save results
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Save DataFrame
-    data.to_csv(os.path.join(output_dir, f"{exp_name}.csv"), index=False)
+    os.makedirs(dataset_name, exist_ok=True)
+    output_path = os.path.join(dataset_name, f"{exp_name}.csv")
+    data.to_csv(output_path, index=False)
+    logger.info(f"Results saved to {output_path}")
 
     return exp_name, wer
 
 
 def main():
-    # Configurations to test
-    chunk_sizes = [2, 5, 10, 20]
-    overlap_sizes = [0, 0.1, 0.2, 0.5, 1.0]
-    time_limit = 0
-    dataset_name = "test-clean"
+    parser = argparse.ArgumentParser(
+        description="Evaluate ASR models on LibriSpeech dataset"
+    )
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        default="test-clean",
+        help="Dataset split to use (default: test-clean)",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="ichigo-asr-2501-en",
+        help="Model name to evaluate (default: ichigo-asr-2501-en)",
+    )
 
-    # Setup output directory
-    output_dir = "librispeech_" + dataset_name
-    os.makedirs(output_dir, exist_ok=True)
+    parser.add_argument(
+        "--is_whisper",
+        type=bool,
+        default=False,
+    )
 
-    # Load dataset
-    dataset = LibriSpeechIchigo(dataset_name)
+    args = parser.parse_args()
 
-    # Store WER results
-    wer_results = {}
-
-    # Evaluate all configurations
-    for chunk_sec in chunk_sizes:
-        for overlap_sec in overlap_sizes:
-            if overlap_sec >= chunk_sec:
-                continue
-
-            exp_name, wer = evaluate_config(
-                dataset, time_limit, chunk_sec, overlap_sec, output_dir
-            )
-            wer_results[exp_name] = float(wer)
-
-    # Save WER results
-    with open(os.path.join(output_dir, "wer_results.json"), "w") as f:
-        json.dump(wer_results, f, indent=4)
-
-    print("\nEvaluation complete! Results saved in:", output_dir)
-    print("\nWER Results:")
-    for exp_name, wer in wer_results.items():
-        print(f"{exp_name}: {wer*100:.2f}%")
+    try:
+        dataset = LibriSpeechASR(is_whisper=args.is_whisper, split=args.dataset)
+        exp_name, wer = evaluate_wer(
+            dataset, model_name=args.model, dataset_name=args.dataset
+        )
+        logger.info(f"{exp_name}: {wer*100:.2f}%")
+    except Exception as e:
+        logger.error(f"Evaluation failed: {e}")
+        raise
 
 
 if __name__ == "__main__":
