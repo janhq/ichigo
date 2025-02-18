@@ -8,6 +8,7 @@ import pandas as pd
 import torch
 import torchaudio
 import whisper
+from datasets import load_dataset
 from tqdm import tqdm
 from whisper.normalizers import EnglishTextNormalizer
 
@@ -60,6 +61,48 @@ class LibriSpeechASR(torch.utils.data.Dataset):
         else:
             audio = audio.to(self.device)
             return audio, text
+
+
+class Earnings22ASR(torch.utils.data.Dataset):
+    """Earnings22 dataset wrapper for ASR evaluation."""
+
+    def __init__(
+        self,
+        is_whisper=False,
+        cache_dir: Optional[str] = None,
+    ):
+        """
+        Initialize the Earnings22 dataset.
+
+        Args:
+            cache_dir: Directory to cache the dataset. Defaults to ~/.cache
+        """
+        self.cache_dir = cache_dir or os.path.expanduser("~/.cache")
+        try:
+            self.dataset = load_dataset(
+                "anton-l/earnings22_baseline_5_gram",
+                split="test",
+                trust_remote_code=True,
+            )
+        except Exception as e:
+            raise RuntimeError(f"Failed to load Earnings22 dataset: {e}")
+
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.is_whisper = is_whisper
+
+    def __len__(self) -> int:
+        return len(self.dataset)
+
+    def __getitem__(self, item: int) -> Tuple[torch.Tensor, str]:
+        example = self.dataset[item]
+        audio = torch.tensor(example["audio"]["array"]).float()
+        if self.is_whisper:
+            audio = whisper.pad_or_trim(audio.flatten()).to(self.device)
+            mel = whisper.log_mel_spectrogram(audio)
+            return (mel, example["sentence"])
+        else:
+            audio = audio.to(self.device)
+            return audio.unsqueeze(0), example["sentence"]
 
 
 def evaluate_wer(
@@ -148,12 +191,14 @@ def main():
     parser.add_argument(
         "--dataset",
         type=str,
+        choices=["test-clean", "test-other", "earnings22"],
         default="test-clean",
-        help="Dataset split to use (default: test-clean)",
+        help="Dataset to use (default: test-clean)",
     )
     parser.add_argument(
         "--model",
         type=str,
+        choices=["ichigo-asr-2501-en", "whispervq-2405-en", "medium-whisper"],
         default="ichigo-asr-2501-en",
         help="Model name to evaluate (default: ichigo-asr-2501-en)",
     )
@@ -167,7 +212,11 @@ def main():
     args = parser.parse_args()
 
     try:
-        dataset = LibriSpeechASR(is_whisper=args.is_whisper, split=args.dataset)
+        if args.dataset == "earnings22":
+            dataset = Earnings22ASR(is_whisper=args.is_whisper)
+        else:
+            dataset = LibriSpeechASR(is_whisper=args.is_whisper, split=args.dataset)
+
         exp_name, wer = evaluate_wer(
             dataset, model_name=args.model, dataset_name=args.dataset
         )
