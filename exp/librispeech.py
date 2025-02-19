@@ -140,11 +140,13 @@ def evaluate_wer(
     predictions: List[str] = []
     gt: List[str] = []
     durations: List[float] = []
+    srs: List[float] = []
 
     for idx in tqdm(range(len(dataset)), desc="Processing audio"):
         try:
             audio, text, sr = dataset[idx]
             duration = audio.shape[1] / sr
+            srs.append(sr)
 
             if isinstance(asr, IchigoASR):
                 result = asr.transcribe_tensor(audio, chunk=chunk_size)
@@ -167,6 +169,7 @@ def evaluate_wer(
     data = pd.DataFrame(
         {
             "duration": durations,
+            "sample_rate": srs,
             "predictions": predictions,
             "gt": gt,
             "predictions_clean": [normalizer(text) for text in predictions],
