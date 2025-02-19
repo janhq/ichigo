@@ -10,7 +10,7 @@
 <a href='https://colab.research.google.com/drive/18IiwN0AzBZaox5o0iidXqWD1xKq11XbZ?usp=sharing'><img src='https://colab.research.google.com/assets/colab-badge.svg'></a> #prepare a new google colab notebook for demo
 -->
 
-[**About**](#About) | [**Installation**](#Installation) | [**Ichigo-ASR**](#Ichigo-ASR) | [**Ichigo-LLM**](#Ichigo-LLM) | [**Ichigo-TTS**](#Ichigo-TTS) | 
+[**About**](#About) | [**Installation**](#Installation) | [**Ichigo-ASR**](#Ichigo-ASR) | [**Ichigo-LLM**](#Ichigo-LLM) | [**Ichigo-TTS**](#Ichigo-TTS) | [**Benchmarks**](#Benchmarks)
 
 <img src="assets/ichigo.jpeg" width="400"/>
 </div>
