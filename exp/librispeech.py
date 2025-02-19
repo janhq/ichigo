@@ -51,16 +51,16 @@ class LibriSpeechASR(torch.utils.data.Dataset):
         return len(self.dataset)
 
     def __getitem__(self, item: int) -> Tuple[torch.Tensor, str]:
-        audio, sample_rate, text, _, _, _ = self.dataset[item]
-        if sample_rate != 16000:
-            raise ValueError(f"Expected sample rate 16000, got {sample_rate}")
+        audio, sr, text, _, _, _ = self.dataset[item]
+        if sr != 16000:
+            raise ValueError(f"Expected sample rate 16000, got {sr}")
         if self.is_whisper:
             audio = whisper.pad_or_trim(audio.flatten()).to(self.device)
             mel = whisper.log_mel_spectrogram(audio)
-            return (mel, text)
+            return mel, text, sr
         else:
             audio = audio.to(self.device)
-            return audio, text
+            return audio, text, sr
 
 
 class Earnings22ASR(torch.utils.data.Dataset):
@@ -96,13 +96,14 @@ class Earnings22ASR(torch.utils.data.Dataset):
     def __getitem__(self, item: int) -> Tuple[torch.Tensor, str]:
         example = self.dataset[item]
         audio = torch.tensor(example["audio"]["array"]).float()
+        sr = example["audio"]["sample_rate"]
         if self.is_whisper:
             audio = whisper.pad_or_trim(audio.flatten()).to(self.device)
             mel = whisper.log_mel_spectrogram(audio)
-            return (mel, example["sentence"])
+            return mel, example["sentence"], sr
         else:
             audio = audio.to(self.device)
-            return audio.unsqueeze(0), example["sentence"]
+            return audio.unsqueeze(0), example["sentence"], sr
 
 
 def evaluate_wer(
@@ -142,8 +143,8 @@ def evaluate_wer(
 
     for idx in tqdm(range(len(dataset)), desc="Processing audio"):
         try:
-            audio, text = dataset[idx]
-            duration = audio.shape[1] / 16000
+            audio, text, sr = dataset[idx]
+            duration = audio.shape[1] / sr
 
             if isinstance(asr, IchigoASR):
                 result = asr.transcribe_tensor(audio, chunk=chunk_size)
@@ -172,17 +173,17 @@ def evaluate_wer(
             "gt_clean": [normalizer(text) for text in gt],
         }
     )
+
+    os.makedirs(dataset_name, exist_ok=True)
+    output_path = os.path.join(dataset_name, f"{exp_name}.csv")
     data.to_csv(output_path, index=False)
+    logger.info(f"Results saved to {output_path}")
 
     print("Before dropna", len(data))
     data = data.dropna()
     print("After dropna", len(data))
 
     wer = jiwer.wer(list(data["gt_clean"]), list(data["predictions_clean"]))
-
-    os.makedirs(dataset_name, exist_ok=True)
-    output_path = os.path.join(dataset_name, f"{exp_name}.csv")
-    logger.info(f"Results saved to {output_path}")
 
     return exp_name, wer
 
