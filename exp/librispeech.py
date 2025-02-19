@@ -172,13 +172,16 @@ def evaluate_wer(
             "gt_clean": [normalizer(text) for text in gt],
         }
     )
+    data.to_csv(output_path, index=False)
+
+    print("Before dropna", len(data))
+    data = data.dropna()
+    print("After dropna", len(data))
 
     wer = jiwer.wer(list(data["gt_clean"]), list(data["predictions_clean"]))
 
-    # Save results
     os.makedirs(dataset_name, exist_ok=True)
     output_path = os.path.join(dataset_name, f"{exp_name}.csv")
-    data.to_csv(output_path, index=False)
     logger.info(f"Results saved to {output_path}")
 
     return exp_name, wer
