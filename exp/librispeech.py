@@ -96,7 +96,7 @@ class Earnings22ASR(torch.utils.data.Dataset):
     def __getitem__(self, item: int) -> Tuple[torch.Tensor, str]:
         example = self.dataset[item]
         audio = torch.tensor(example["audio"]["array"]).float()
-        sr = example["audio"]["sample_rate"]
+        sr = example["audio"]["sampling_rate"]
         if self.is_whisper:
             audio = whisper.pad_or_trim(audio.flatten()).to(self.device)
             mel = whisper.log_mel_spectrogram(audio)
