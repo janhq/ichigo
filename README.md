@@ -132,11 +132,11 @@ Everything here is a work in progress, and we welcome all kinds of feedback and 
 
 ### Benchmarks
 
-| Model | LS Clean (2.6k) | LS Other (2.9k) | Earning22 (57.3k) |viVoice (10k) |
-|------------------------|-----------------|-----------------|-----------------|------------|
-|`ichigo-asr-2501-en` |  4.28 | 9.35 | 35.55 | **11.68** |
-| `whispervq (7 Lang)` | 9.79 | 14.40 | 38.45  | - |
-| `Whisper medium.en` | **2.88** | **6.04** | **16.64** | 18.30 | 
+| Model | LS Clean (2.6k) | LS Other (2.9k) | Earning22 (57.3k) | LargeScaleASR (8.09k) | viVoice (10k) |
+|------------------------|-----------------|-----------------|-----------------|------------|------------|
+|[`ichigo-asr-2501-en`](https://huggingface.co/homebrewltd/Ichigo-whisper-v0.1) |  4.28 | 9.35 | 35.55 | 16.09 | **11.68** |
+| [`whispervq-2405-en`](https://huggingface.co/WhisperSpeech/WhisperSpeech/blob/main/whisper-vq-stoks-v3-7lang.model) | 9.79 | 14.40 | 38.45  | 18.38 | - |
+| [`medium.en`](https://huggingface.co/openai/whisper-medium) | **2.88** | **6.04** | **16.64** | **8.21** | 18.30 | 
 
 ## Join Us
 
