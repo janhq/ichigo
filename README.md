@@ -10,7 +10,7 @@
 <a href='https://colab.research.google.com/drive/18IiwN0AzBZaox5o0iidXqWD1xKq11XbZ?usp=sharing'><img src='https://colab.research.google.com/assets/colab-badge.svg'></a> #prepare a new google colab notebook for demo
 -->
 
-[**About**](#About) | [**Installation**](#Installation) | [**Ichigo-ASR**](#Ichigo-ASR) | [**Ichigo-LLM**](#Ichigo-LLM) | [**Ichigo-TTS**](#Ichigo-TTS) 
+[**About**](#About) | [**Installation**](#Installation) | [**Ichigo-ASR**](#Ichigo-ASR) | [**Ichigo-LLM**](#Ichigo-LLM) | [**Ichigo-TTS**](#Ichigo-TTS) | [**Benchmarks**](#Benchmarks)
 
 <img src="assets/ichigo.jpeg" width="400"/>
 </div>
@@ -35,6 +35,8 @@ pip install ichigo
 ```
 
 ## Ichigo-ASR
+
+<a href='https://colab.research.google.com/drive/1fKu5nQZ9JG_K2abM7T9-YMiq5pzrNaOH?usp=sharing'><img src='https://colab.research.google.com/assets/colab-badge.svg'></a>
 
 Ichigo-ASR is a compact (22M parameters), open-source speech tokenizer for the `Whisper-medium model`, designed to enhance performance on multilingual with minimal impact on its original English capabilities. Unlike models that output continuous embeddings, Ịchigo-ASR compresses speech into discrete tokens, making it more compatible with large language models (LLMs) for immediate speech understanding. This speech tokenizer has been trained on over ~400 hours of English data and ~1000 hours of Vietnamese data.
 
@@ -127,6 +129,14 @@ We built this package around what we our vision of the future of speech -- the u
 Our package supports underlying abstractions that can support different kinds of models and we welcome researchers to work with us to build these models if you find this way of doing things helpful. You should join our discord community where we can talk about this. A technical report explaining how this framework works and how we think about the future of speech will be uploaded soon.
 
 Everything here is a work in progress, and we welcome all kinds of feedback and collaborations
+
+### Benchmarks
+
+| Model | LS Clean (2.6k) | LS Other (2.9k) | Earning22 (57.3k) | LargeScaleASR (8.09k) | viVoice (10k) |
+|------------------------|-----------------|-----------------|-----------------|------------|------------|
+|[`ichigo-asr-2501-en`](https://huggingface.co/homebrewltd/Ichigo-whisper-v0.1) |  4.28 | 9.35 | 35.55 | 16.09 | **11.68** |
+| [`whispervq-2405-en`](https://huggingface.co/WhisperSpeech/WhisperSpeech/blob/main/whisper-vq-stoks-v3-7lang.model) | 9.79 | 14.40 | 38.45  | 18.38 | - |
+| [`medium.en`](https://huggingface.co/openai/whisper-medium) | **2.88** | **6.04** | **16.64** | **8.21** | 18.30 | 
 
 ## Join Us
 
