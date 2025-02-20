@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+from io import BytesIO
 from typing import List, Optional, Tuple
 
 import jiwer
@@ -19,21 +20,12 @@ logger = logging.getLogger(__name__)
 
 
 class LibriSpeechASR(torch.utils.data.Dataset):
-    """LibriSpeech dataset wrapper for ASR evaluation."""
-
     def __init__(
         self,
         is_whisper=False,
         split: str = "test-clean",
         cache_dir: Optional[str] = None,
     ):
-        """
-        Initialize the LibriSpeech dataset.
-
-        Args:
-            split: Dataset split to use ("test-clean", "test-other", etc.)
-            cache_dir: Directory to cache the dataset. Defaults to ~/.cache
-        """
         self.cache_dir = cache_dir or os.path.expanduser("~/.cache")
         try:
             self.dataset = torchaudio.datasets.LIBRISPEECH(
@@ -64,20 +56,10 @@ class LibriSpeechASR(torch.utils.data.Dataset):
 
 
 class Earnings22ASR(torch.utils.data.Dataset):
-    """Earnings22 dataset wrapper for ASR evaluation."""
-
     def __init__(
         self,
         is_whisper=False,
-        cache_dir: Optional[str] = None,
     ):
-        """
-        Initialize the Earnings22 dataset.
-
-        Args:
-            cache_dir: Directory to cache the dataset. Defaults to ~/.cache
-        """
-        self.cache_dir = cache_dir or os.path.expanduser("~/.cache")
         try:
             self.dataset = load_dataset(
                 "anton-l/earnings22_baseline_5_gram",
@@ -106,6 +88,41 @@ class Earnings22ASR(torch.utils.data.Dataset):
             return audio.unsqueeze(0), example["sentence"], sr
 
 
+class LargeScaleASR(torch.utils.data.Dataset):
+    def __init__(
+        self,
+        is_whisper=False,
+        subset: str = "medium",
+        split: str = "test",
+    ):
+        try:
+            self.dataset = load_dataset(
+                "/home/jovyan/aws-s3/tuanlda78202",
+                subset,
+                split=split,
+            )
+        except Exception as e:
+            raise RuntimeError(f"Failed to load LargeScaleASR dataset: {e}")
+
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.is_whisper = is_whisper
+
+    def __len__(self) -> int:
+        return len(self.dataset)
+
+    def __getitem__(self, item: int) -> Tuple[torch.Tensor, str]:
+        example = self.dataset[item]
+        audio, sr = torchaudio.load(BytesIO(example["wav"]["bytes"]))
+
+        if self.is_whisper:
+            audio = whisper.pad_or_trim(audio.flatten()).to(self.device)
+            mel = whisper.log_mel_spectrogram(audio)
+            return mel, example["text"], sr
+        else:
+            audio = audio.to(self.device)
+            return audio, example["text"], sr
+
+
 def evaluate_wer(
     dataset: LibriSpeechASR,
     model_name: str = "ichigo-asr-2501-en",
@@ -116,7 +133,7 @@ def evaluate_wer(
     Evaluate Word Error Rate on the dataset.
 
     Args:
-        dataset: LibriSpeech dataset instance
+        dataset: Dataset instance
         model_name: Name of the model to evaluate
         dataset_name: Name of the dataset split
         chunk_size: Audio chunk size for processing
@@ -157,7 +174,6 @@ def evaluate_wer(
                     whisper.DecodingOptions(language="en", without_timestamps=True),
                 )
                 predictions.append(result.text)
-
             gt.append(text)
             durations.append(duration)
         except Exception as e:
@@ -198,16 +214,16 @@ def main():
     parser.add_argument(
         "--dataset",
         type=str,
-        choices=["test-clean", "test-other", "earnings22"],
+        choices=["test-clean", "test-other", "earnings22", "ls-asr"],
         default="test-clean",
-        help="Dataset to use (default: test-clean)",
+        help="Dataset to use",
     )
     parser.add_argument(
         "--model",
         type=str,
         choices=["ichigo-asr-2501-en", "whispervq-2405-en", "medium-whisper"],
         default="ichigo-asr-2501-en",
-        help="Model name to evaluate (default: ichigo-asr-2501-en)",
+        help="Model name to evaluate",
     )
 
     parser.add_argument(
@@ -221,6 +237,10 @@ def main():
     try:
         if args.dataset == "earnings22":
             dataset = Earnings22ASR(is_whisper=args.is_whisper)
+        elif args.dataset == "ls-asr":
+            dataset = LargeScaleASR(
+                is_whisper=args.is_whisper, subset="medium", split="test"
+            )
         else:
             dataset = LibriSpeechASR(is_whisper=args.is_whisper, split=args.dataset)
 
