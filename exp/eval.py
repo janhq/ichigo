@@ -124,7 +124,7 @@ class LargeScaleASR(torch.utils.data.Dataset):
 
 
 def evaluate_wer(
-    dataset: LibriSpeechASR,
+    dataset: torch.utils.data.Dataset,
     model_name: str = "ichigo-asr-2501-en",
     dataset_name: str = "test-clean",
     chunk_size: int = 1000000,
@@ -228,8 +228,8 @@ def main():
 
     parser.add_argument(
         "--is_whisper",
-        type=bool,
-        default=False,
+        action="store_true",
+        help="Use Whisper preprocessing for audio input",
     )
 
     args = parser.parse_args()
