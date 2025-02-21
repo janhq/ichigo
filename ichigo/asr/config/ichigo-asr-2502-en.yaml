@@ -1,0 +1,39 @@
+# Hub
+model_name: "ichigo-asr-2502-en.ckpt"
+model_hub: "homebrewltd/ichigo-asr"
+whisper_name: "large-v3"
+
+s2r:
+
+quantizer:
+  # Model Architecture
+  n_head: 20
+  head_width: 64
+  ffn_mult: 4
+  depth: 1
+  q_depth: 1
+  downsample: 2
+
+  # Vector Quantization
+  vq_codes: 2048
+  mask_code: 2048
+  num_quantizers: 1
+  codebook_dim: 64
+  codebook_decay: 0.99
+  commitment_weight: 1.0
+  threshold_ema_dead_code: 0
+  query_mult: 2
+  use_cosine_sim: True
+  no_quantize: False
+
+  # Utils
+  rope: True
+  mask_embs: True
+  downsample_conv: False
+  downsample_mean: True
+
+r2t:
+  decoding_options:
+    task: "transcribe"
+    language: "en"
+    prompt: "You are a professional transcriptionist fluent in English. You are tasked with transcribing an audio recording in which the speaker speaks entirely in English. The speaker may have a regional accent. Your goal is to provide an accurate transcription of all spoken content. If a transcribed section appears nonsensical or inaccurate, feel free to revise it to ensure clarity and correctness"
