@@ -215,14 +215,19 @@ def main():
         "--dataset",
         type=str,
         choices=["test-clean", "test-other", "earnings22", "ls-asr"],
-        default="test-clean",
+        default="ls-asr",
         help="Dataset to use",
     )
     parser.add_argument(
         "--model",
         type=str,
-        choices=["ichigo-asr-2501-en", "whispervq-2405-en", "medium-whisper"],
-        default="ichigo-asr-2501-en",
+        choices=[
+            "ichigo-asr-2501-en",
+            "ichigo-asr-2502-en",
+            "whispervq-2405-en",
+            "medium-whisper",
+        ],
+        default="ichigo-asr-2502-en",
         help="Model name to evaluate",
     )
 
