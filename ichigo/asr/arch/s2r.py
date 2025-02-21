@@ -13,7 +13,7 @@ class Speech2Rep(nn.Module):
         del self.model.decoder
 
     def forward(self, wav):
-        mel = whisper.log_mel_spectrogram(wav)
+        mel = whisper.log_mel_spectrogram(wav, n_mels=self.model.dims.n_mels)
         n_frames = mel.shape[-1]
 
         if n_frames > whisper.audio.N_FRAMES:
