@@ -97,7 +97,7 @@ class LargeScaleASR(torch.utils.data.Dataset):
     ):
         try:
             self.dataset = load_dataset(
-                "/home/jovyan/aws-s3/tuanlda78202",
+                "/home/jovyan/aws-s3-data/aws-s3/tuanlda78202",
                 subset,
                 split=split,
             )
