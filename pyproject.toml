@@ -24,7 +24,9 @@ dependencies = [
     "twine",
     "fastapi",
     "whisperspeech",
-    "accelerate>=0.26.0"
+    "accelerate>=0.26.0",
+    "datasets",
+    "jiwer"
 ]
 
 [tool.setuptools]
