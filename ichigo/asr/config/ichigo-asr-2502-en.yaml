@@ -15,8 +15,8 @@ quantizer:
   downsample: 2
 
   # Vector Quantization
-  vq_codes: 1024
-  mask_code: 1024
+  vq_codes: 512
+  mask_code: 512
   num_quantizers: 1
   codebook_dim: 64
   codebook_decay: 0.99
