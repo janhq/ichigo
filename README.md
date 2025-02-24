@@ -132,7 +132,7 @@ Everything here is a work in progress, and we welcome all kinds of feedback and 
 
 ### Benchmarks
 
-| Model | LS Clean (2.6k) | LS Other (2.9k) | Earning22 (57.3k) | LargeScaleASR (8.09k) | viVoice (10k) |
+| Model | [LS Clean](https://www.openslr.org/12) (2.6k) | [LS Other](https://www.openslr.org/12) (2.9k) | [Earnings22](https://huggingface.co/datasets/distil-whisper/earnings22) (57.3k) | [LargeScaleASR](https://huggingface.co/datasets/speechbrain/LargeScaleASR) (8.09k) | [viVoice](https://huggingface.co/datasets/capleaf/viVoice) (10k) |
 |------------------------|-----------------|-----------------|-----------------|------------|------------|
 |[`ichigo-asr-2501-en`](https://huggingface.co/homebrewltd/Ichigo-whisper-v0.1) |  4.28 | 9.35 | 35.55 | 16.09 | **11.68** |
 | [`whispervq-2405-en`](https://huggingface.co/WhisperSpeech/WhisperSpeech/blob/main/whisper-vq-stoks-v3-7lang.model) | 9.79 | 14.40 | 38.45  | 18.38 | - |
