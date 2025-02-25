@@ -38,3 +38,4 @@ r2t:
   decoding_options:
     task: "transcribe"
     language: "en"
+    prompt: "You are a professional transcriptionist fluent in English. You are tasked with transcribing an audio recording in which the speaker speaks entirely in English. The speaker may have a regional accent. Your goal is to provide an accurate transcription of all spoken content. If a transcribed section appears nonsensical or inaccurate, feel free to revise it to ensure clarity and correctness"
