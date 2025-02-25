@@ -125,25 +125,37 @@ class Quantizer(nn.Module):
             return stoks
 
     def dequantize(self, stoks):
+        assert stoks.shape[0] == 1, "batch processing is not supported"
         stoks = stoks.squeeze()
 
-        # Dequantize
-        assert self.q_depth == 1
-        assert len(stoks.shape) == 1, "batch processing is not supported"
+        assert stoks.shape[1] == len(
+            self.rq.layers
+        ), f"Number of quantizers ({len(self.rq.layers)}) must match token dimensions ({stoks.shape[1]})"
 
-        stoks = F.pad(
-            stoks,
-            (0, self.stoks_len - stoks.shape[-1]),
-            value=self.mask_code if self.mask_embs else 0,
+        if stoks.shape[0] < self.stoks_len:
+            pad_value = self.mask_code if self.mask_embs else 0
+            stoks = F.pad(
+                stoks,
+                (0, 0, 0, self.stoks_len - stoks.shape[0]),
+                value=pad_value,
+            )
+
+        # Store output tensor
+        x = torch.zeros(
+            (1, stoks.shape[0], self.width),
+            device=stoks.device,
+            dtype=self.rq.layers[0]._codebook.embed.dtype,
         )
 
-        x = self.rq.layers[0]._codebook.embed[0, stoks.to(torch.long).view(-1)]
+        # Sum contributions from all quantizers
+        for layer_idx in range(len(self.rq.layers)):
+            layer = self.rq.layers[layer_idx]
+            layer_stoks = stoks[:, layer_idx]
+            layer_embed = layer._codebook.embed[0, layer_stoks.to(torch.long)]
+            project_out = getattr(layer, "project_out", None) or layer.project_out
+            x += project_out(layer_embed)
+
         x = x.repeat_interleave(self.downsample, -2)
-
-        project_out = (
-            getattr(self.rq, "project_out", None) or self.rq.layers[0].project_out
-        )
-        x = project_out(x).unsqueeze(0)
 
         positions = torch.arange(0, x.shape[-2], dtype=torch.long, device=x.device)
         x = x + self.positional_embedding(positions)
