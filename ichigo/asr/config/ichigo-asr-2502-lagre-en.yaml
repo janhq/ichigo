@@ -17,8 +17,10 @@ quantizer:
   # Vector Quantization
   vq_codes: 512
   mask_code: 512
-  num_quantizers: 1
+  num_quantizers: 4
   codebook_dim: 64
+
+  # Others
   codebook_decay: 0.99
   commitment_weight: 1.0
   threshold_ema_dead_code: 0

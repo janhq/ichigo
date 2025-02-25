@@ -159,6 +159,7 @@ def evaluate_wer(
     gt: List[str] = []
     durations: List[float] = []
     srs: List[float] = []
+    normalizer = EnglishTextNormalizer()
 
     for idx in tqdm(range(len(dataset)), desc="Processing audio"):
         try:
@@ -175,13 +176,14 @@ def evaluate_wer(
                     whisper.DecodingOptions(language="en", without_timestamps=True),
                 )
                 predictions.append(result.text)
+
+            # print(jiwer.wer(normalizer(text), normalizer(result)))
+
             gt.append(text)
             durations.append(duration)
         except Exception as e:
             logger.error(f"Error processing sample {idx}: {e}")
             continue
-
-    normalizer = EnglishTextNormalizer()
 
     data = pd.DataFrame(
         {
@@ -224,12 +226,13 @@ def main():
         type=str,
         choices=[
             "ichigo-asr-2501-en",
-            "ichigo-asr-2502-en",
+            "ichigo-asr-2502-medium-en",
+            "ichigo-asr-2502-large-en",
             "whispervq-2405-en",
             "medium",
             "large-v3",
         ],
-        default="ichigo-asr-2502-en",
+        default="ichigo-asr-2502-medium-en",
         help="Model name to evaluate",
     )
 
