@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class LibriSpeechASR(torch.utils.data.Dataset):
     def __init__(
         self,
-        is_whisper=False,
+        model_name,
         split: str = "test-clean",
         cache_dir: Optional[str] = None,
     ):
@@ -37,7 +37,7 @@ class LibriSpeechASR(torch.utils.data.Dataset):
             raise RuntimeError(f"Failed to load LibriSpeech dataset: {e}")
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.is_whisper = is_whisper
+        self.model_name = model_name
 
     def __len__(self) -> int:
         return len(self.dataset)
@@ -46,9 +46,10 @@ class LibriSpeechASR(torch.utils.data.Dataset):
         audio, sr, text, _, _, _ = self.dataset[item]
         if sr != 16000:
             raise ValueError(f"Expected sample rate 16000, got {sr}")
-        if self.is_whisper:
+        if self.model_name in ["medium", "large-v3"]:
             audio = whisper.pad_or_trim(audio.flatten()).to(self.device)
-            mel = whisper.log_mel_spectrogram(audio)
+            n_mels = 80 if self.model_name == "medium" else 128
+            mel = whisper.log_mel_spectrogram(audio, n_mels=n_mels)
             return mel, text, sr
         else:
             audio = audio.to(self.device)
@@ -58,7 +59,7 @@ class LibriSpeechASR(torch.utils.data.Dataset):
 class Earnings22ASR(torch.utils.data.Dataset):
     def __init__(
         self,
-        is_whisper=False,
+        model_name,
     ):
         try:
             self.dataset = load_dataset(
@@ -70,7 +71,7 @@ class Earnings22ASR(torch.utils.data.Dataset):
             raise RuntimeError(f"Failed to load Earnings22 dataset: {e}")
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.is_whisper = is_whisper
+        self.model_name = model_name
 
     def __len__(self) -> int:
         return len(self.dataset)
@@ -79,9 +80,10 @@ class Earnings22ASR(torch.utils.data.Dataset):
         example = self.dataset[item]
         audio = torch.tensor(example["audio"]["array"]).float()
         sr = example["audio"]["sampling_rate"]
-        if self.is_whisper:
+        if self.model_name in ["medium", "large-v3"]:
             audio = whisper.pad_or_trim(audio.flatten()).to(self.device)
-            mel = whisper.log_mel_spectrogram(audio)
+            n_mels = 80 if self.model_name == "medium" else 128
+            mel = whisper.log_mel_spectrogram(audio, n_mels=n_mels)
             return mel, example["sentence"], sr
         else:
             audio = audio.to(self.device)
@@ -91,7 +93,7 @@ class Earnings22ASR(torch.utils.data.Dataset):
 class LargeScaleASR(torch.utils.data.Dataset):
     def __init__(
         self,
-        is_whisper=False,
+        model_name,
         subset: str = "medium",
         split: str = "test",
     ):
@@ -105,7 +107,7 @@ class LargeScaleASR(torch.utils.data.Dataset):
             raise RuntimeError(f"Failed to load LargeScaleASR dataset: {e}")
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.is_whisper = is_whisper
+        self.model_name = model_name
 
     def __len__(self) -> int:
         return len(self.dataset)
@@ -114,9 +116,10 @@ class LargeScaleASR(torch.utils.data.Dataset):
         example = self.dataset[item]
         audio, sr = torchaudio.load(BytesIO(example["wav"]["bytes"]))
 
-        if self.is_whisper:
+        if self.model_name in ["medium", "large-v3"]:
             audio = whisper.pad_or_trim(audio.flatten()).to(self.device)
-            mel = whisper.log_mel_spectrogram(audio)
+            n_mels = 80 if self.model_name == "medium-whisper" else 128
+            mel = whisper.log_mel_spectrogram(audio, n_mels=n_mels)
             return mel, example["text"], sr
         else:
             audio = audio.to(self.device)
@@ -147,10 +150,8 @@ def evaluate_wer(
     try:
         if model_name.startswith(("ichigo-asr", "whispervq")):
             asr = IchigoASR(model_name)
-        elif model_name.startswith("medium-whisper"):
-            asr = whisper.load_model("medium")
         else:
-            raise ValueError(f"Unsupported model type: {model_name}")
+            asr = whisper.load_model(model_name)
     except Exception as e:
         raise RuntimeError(f"Failed to load model {model_name}: {e}")
 
@@ -225,29 +226,24 @@ def main():
             "ichigo-asr-2501-en",
             "ichigo-asr-2502-en",
             "whispervq-2405-en",
-            "medium-whisper",
+            "medium",
+            "large-v3",
         ],
         default="ichigo-asr-2502-en",
         help="Model name to evaluate",
-    )
-
-    parser.add_argument(
-        "--is_whisper",
-        action="store_true",
-        help="Use Whisper preprocessing for audio input",
     )
 
     args = parser.parse_args()
 
     try:
         if args.dataset == "earnings22":
-            dataset = Earnings22ASR(is_whisper=args.is_whisper)
+            dataset = Earnings22ASR(model_name=args.model)
         elif args.dataset == "ls-asr":
             dataset = LargeScaleASR(
-                is_whisper=args.is_whisper, subset="medium", split="test"
+                model_name=args.model, subset="medium", split="test"
             )
         else:
-            dataset = LibriSpeechASR(is_whisper=args.is_whisper, split=args.dataset)
+            dataset = LibriSpeechASR(model_name=args.model, split=args.dataset)
 
         exp_name, wer = evaluate_wer(
             dataset, model_name=args.model, dataset_name=args.dataset
