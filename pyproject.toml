@@ -26,7 +26,9 @@ dependencies = [
     "whisperspeech",
     "accelerate>=0.26.0",
     "datasets",
-    "jiwer"
+    "jiwer",
+    "wandb",
+    "termcolor"
 ]
 
 [tool.setuptools]

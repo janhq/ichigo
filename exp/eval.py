@@ -9,9 +9,11 @@ import pandas as pd
 import torch
 import whisper
 from data import Earnings22ASR, LargeScaleASR, LibriSpeechASR
+from termcolor import colored
 from tqdm import tqdm
 from whisper.normalizers import EnglishTextNormalizer
 
+import wandb
 from ichigo.asr import IchigoASR
 
 logging.basicConfig(level=logging.INFO)
@@ -28,7 +30,7 @@ def evaluate_wer(
     Evaluate Word Error Rate on the dataset.
 
     Args:
-        dataset: Dataset instance
+        dataset: Dataset instanceƒ
         model_name: Name of the model to evaluate
         dataset_name: Name of the dataset split
         chunk_size: Audio chunk size for processing
@@ -38,6 +40,15 @@ def evaluate_wer(
     """
     exp_name = f"{model_name}-{dataset_name}"
     logger.info(f"Starting evaluation: {exp_name}")
+
+    wandb.init(
+        project="ichigo-eval",
+        name=exp_name,
+        config={
+            "model_name": model_name,
+            "dataset_name": dataset_name,
+        },
+    )
 
     try:
         if model_name.startswith(("ichigo-asr", "whispervq")):
@@ -75,9 +86,15 @@ def evaluate_wer(
             norm_gt = normalizer(text)
             wer = jiwer.wer(norm_gt, norm_pred)
             boundaries = "-" * 50
-            print(
-                f"{boundaries}\nWER #{idx}: {wer:.2f}\nPred: {norm_pred}\nGT: {norm_gt}\n{boundaries}"
+            logger.info(
+                f"\n{boundaries}\n"
+                f"WER #{idx}: {colored(f'{wer:.2f}', 'red')}\n"
+                f"Pred: {colored(norm_pred, 'cyan')}\n"
+                f"GT: {colored(norm_gt, 'green')}\n"
+                f"{boundaries}"
             )
+
+            wandb.log({"sample_wer": wer, "audio_duration": duration})
 
             wers.append(wer)
             gt.append(text)
@@ -87,7 +104,8 @@ def evaluate_wer(
             logger.error(f"Error processing sample {idx}: {e}")
             continue
 
-    print(f"Avg WER: {sum(wers)/len(wers)}")
+    avg_wer = sum(wers) / len(wers)
+    logger.info(colored(f"Avg WER: {avg_wer:.2f}", "yellow", attrs=["bold"]))
 
     data = pd.DataFrame(
         {
@@ -109,6 +127,26 @@ def evaluate_wer(
 
     data = data.dropna()
     wer = jiwer.wer(list(data["gt_clean"]), list(data["preds_clean"]))
+
+    # Wandb Table
+    table = wandb.Table(columns=["sample_id", "wer", "duration", "pred", "gt"])
+    for i in range(len(wers)):
+        table.add_data(
+            i,
+            wers[i],
+            durations[i],
+            data["preds_clean"].iloc[i],
+            data["gt_clean"].iloc[i],
+        )
+
+    wandb.log(
+        {
+            "avg_wer": avg_wer,
+            "samples_table": table,
+        }
+    )
+
+    wandb.finish()
 
     return exp_name, wer
 
