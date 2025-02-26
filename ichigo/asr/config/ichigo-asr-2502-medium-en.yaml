@@ -1,5 +1,5 @@
 # Hub
-model_name: "ichigo-asr-2502-medium-512d-64cd-quant4-8e.ckpt"
+model_name: "ichigo-asr-2502-medium-512d-64cd-quant4-10e.ckpt"
 model_hub: "homebrewltd/ichigo-asr"
 whisper_name: "medium"
 

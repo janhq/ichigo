@@ -24,6 +24,5 @@ class Speech2Rep(nn.Module):
             padding = -n_frames % whisper.audio.N_FRAMES
             padded = F.pad(mel, (0, padding), value=-1.5)
 
-        embs = self.model.encoder(padded)
-
+        embs = self.model.encoder(padded)  # (B, 1500, 1024 or 1280)
         return embs, n_frames
