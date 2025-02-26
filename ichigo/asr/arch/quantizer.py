@@ -117,7 +117,6 @@ class Quantizer(nn.Module):
         x = x + self.mlp(self.mlp_ln(x))
 
         _, stoks, _ = self.rq(x)
-        stoks = stoks.squeeze(-1)
 
         if self.mask_embs:
             return stoks[:, : n_frames // 2 // self.downsample]
@@ -126,7 +125,7 @@ class Quantizer(nn.Module):
 
     def dequantize(self, stoks):
         assert stoks.shape[0] == 1, "batch processing is not supported"
-        stoks = stoks.squeeze()
+        stoks = stoks.squeeze(0)
 
         assert stoks.shape[1] == len(
             self.rq.layers
@@ -139,6 +138,8 @@ class Quantizer(nn.Module):
                 (0, 0, 0, self.stoks_len - stoks.shape[0]),
                 value=pad_value,
             )
+
+        # stoks = torch.full_like(stoks, 512)
 
         # Store output tensor
         x = torch.zeros(
