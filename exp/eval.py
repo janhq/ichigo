@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import logging
 import os
 from io import BytesIO
@@ -144,7 +145,7 @@ def evaluate_wer(
     Returns:
         Tuple of experiment name and WER score
     """
-    exp_name = f"{model_name}_{dataset_name}"
+    exp_name = f"{model_name}-{dataset_name}"
     logger.info(f"Starting evaluation: {exp_name}")
 
     try:
@@ -159,6 +160,7 @@ def evaluate_wer(
     gt: List[str] = []
     durations: List[float] = []
     srs: List[float] = []
+    wers: List[float] = []
     normalizer = EnglishTextNormalizer()
 
     for idx in tqdm(range(len(dataset)), desc="Processing audio"):
@@ -170,42 +172,51 @@ def evaluate_wer(
             if isinstance(asr, IchigoASR):
                 result = asr.transcribe_tensor(audio, chunk=chunk_size)
                 predictions.append(result)
+                norm_pred = normalizer(result)
             else:
                 result = asr.decode(
                     audio,
                     whisper.DecodingOptions(language="en", without_timestamps=True),
                 )
                 predictions.append(result.text)
+                norm_pred = normalizer(result.text)
 
-            # print(jiwer.wer(normalizer(text), normalizer(result)))
+            norm_gt = normalizer(text)
+            wer = jiwer.wer(norm_gt, norm_pred)
+            print(
+                f"\n-----WER ID-{idx}: {wer:.2f}\nPred: {norm_pred}\nGT: {norm_gt}-----\n"
+            )
 
+            wers.append(wer)
             gt.append(text)
             durations.append(duration)
+
         except Exception as e:
             logger.error(f"Error processing sample {idx}: {e}")
             continue
 
+    print(f"Avg WER: {sum(wers)/len(wers)}")
+
     data = pd.DataFrame(
         {
-            "duration": durations,
-            "sample_rate": srs,
-            "predictions": predictions,
+            "wer": wers,
+            "length": durations,
+            "sr": srs,
+            "preds": predictions,
             "gt": gt,
-            "predictions_clean": [normalizer(text) for text in predictions],
+            "preds_clean": [normalizer(text) for text in predictions],
             "gt_clean": [normalizer(text) for text in gt],
         }
     )
 
-    os.makedirs(dataset_name, exist_ok=True)
-    output_path = os.path.join(dataset_name, f"{exp_name}.csv")
+    os.makedirs("outputs", exist_ok=True)
+    current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_path = os.path.join("outputs", f"{exp_name}_{current_time}.csv")
     data.to_csv(output_path, index=False)
     logger.info(f"Results saved to {output_path}")
 
-    print("Before dropna", len(data))
     data = data.dropna()
-    print("After dropna", len(data))
-
-    wer = jiwer.wer(list(data["gt_clean"]), list(data["predictions_clean"]))
+    wer = jiwer.wer(list(data["gt_clean"]), list(data["preds_clean"]))
 
     return exp_name, wer
 
