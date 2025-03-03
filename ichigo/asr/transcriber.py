@@ -27,7 +27,7 @@ def load_quantizer(ref, config):
     else:
         local_filename = ref
 
-    spec = torch.load(local_filename)
+    spec = torch.load(local_filename, map_location="cpu")
     model_state_dict = {
         k.replace("model.", ""): v for k, v in spec["state_dict"].items()
     }
