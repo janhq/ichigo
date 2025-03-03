@@ -17,7 +17,6 @@ S2R_MODEL = None
 R2T_MODEL = None
 MODEL_LOCK = threading.Lock()
 
-# TODO: use better name/organization...
 OLD_QUANTIZER_NAME = "ichigo-asr-2501-en-vi"
 NEW_QUANTIZER_NAME = "whispervq-2405-en"
 OLD_QUANTIZER = None
